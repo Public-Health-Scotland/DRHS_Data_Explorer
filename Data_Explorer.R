@@ -1,10 +1,24 @@
+#Name: Drug Related Hospital Statistics (DRHS) Data explorer page
+#Author: Mike Smith
+#Created: 24/01/2019
+#Type: Data visualisation
+#Written on: RStudio
+#Written for: R version 3.5.1 
+#Output: Shiny application
 
-
-
-
-#This is the full app version for the new DRHS dashboard. 
+#This is the full version of the data explorer for the new DRHS dashboard. 
 #The individual tabs are first constructed from smaller apps and then finally added in 
-#to this one larger app.. 
+#to this one larger app
+
+#Currently there are tabs for 
+# Tab 1) A Home Page
+# Tab 2) Time Trend (Geography)
+# Tab 3) Time Trend (Substances)
+# Tab 4) Age/Sex 
+
+#There are two further tabs that are present but content still needs to be loaded
+# Tab 5) Deprivation
+# Tab 6) Table
 
 
 #libraries
@@ -59,7 +73,7 @@ measures<- as.character(unique(time_trend$Measure))
 
 
 #Age and Sex data- this is for the Age/Sex demographic
-age_sex <- read.csv("age_sex_skeleton.csv")
+age_sex <- read.csv("Z:\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Dashboard\\Data_Explorer2\\Age_Sex_Skeleton.csv")
 #add in age/sex options
 age <- as.character(unique(age_sex$Age))
 sex <- as.character(unique(age_sex$Sex))
@@ -78,6 +92,16 @@ age_sex_female <- age_sex %>%
 
 #recombine them into one chart
 age_sex_tornado <- rbind(age_sex_male, age_sex_female)
+
+####Temporary####
+#This is a temporary stop-gap as we move from replacing the skeleton data
+#with real data and the change in factor names
+#The following will be used for selection in the age/sex category
+#until real data is acquired 
+clinical_types2 <- as.character(unique(age_sex$Hospital.Clinical.Type))
+drug_types1_1<- list("Main Categories" = as.character(unique(age_sex$Substance)[c(1,5:10)]),
+                   "Opioids Sub Categories" = as.character(unique(age_sex$Substance)[2:4]))
+drug_types2_2<- as.character(unique(age_sex$Substance)[c(1,5:10)])
 
 
 ##############################################.
@@ -290,7 +314,7 @@ tabsetPanel(
         4,
         shinyWidgets::pickerInput(
           inputId = "Activity_Measure",
-          label = "Select Activity Measure",
+          label = "Select Activity Type",
           choices = activity_measure,
           selected = "Stays"
         )
@@ -441,7 +465,7 @@ tabsetPanel(
         6,
         shinyWidgets::pickerInput(
           inputId = "Activity_Measure2",
-          label = "Select Activity Measure",
+          label = "Select Activity Type",
           choices = activity_measure,
           selected = "Stays"
         )
@@ -662,10 +686,6 @@ tabPanel(
       br(),
       br(),
       plotlyOutput("age_sex_time_plot",
-                   width = "1090px",
-                   height = "600px"),
-      
-      plotlyOutput("age_sex_time_plot2",
                    width = "1090px",
                    height = "600px"),
       HTML(
@@ -897,8 +917,8 @@ tabPanel(
 
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
-                                  label = "Select Substance Category",  
-                                  choices = (if(str_detect(input$Hospital_Clinic_Type, "Overdose"))
+                                  label = "Select Drug Type",  
+                                  choices = (if(str_detect(input$Hospital_Clinic_Type, " Overdose"))
                                     drug_types1
                                     else
                                       drug_types2), 
@@ -1127,7 +1147,7 @@ tabPanel(
       
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
-                                  label = "Select Substance Category (multiple selection)",  
+                                  label = "Select Drug Type (multiple selection)",  
                                   choices = (if(str_detect(input$Hospital_Clinic_Type2, "Overdose"))
                                   drug_types1
                                   else
@@ -1309,16 +1329,13 @@ tabPanel(
 ##############################################.
 ############## Age/Sex tab ----
 ##############################################.
-     
-        
-        
-        
+
         
         output$age_sex_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Hospital_Clinic_Type3",
             label = "Select Hospital-Clinical Type",
-            choices = clinical_types,
+            choices = clinical_types2,
             selected = "Combined- Combined "
           )
         })
@@ -1328,9 +1345,9 @@ tabPanel(
             inputId = "Substances3",
             label = "Select Substance Category",
             choices = (if (str_detect(input$Hospital_Clinic_Type3, "Overdoses"))
-              drug_types1
+              drug_types1_1
               else
-                drug_types2),
+                drug_types2_2),
             selected = "Opiods"
           )
         })
@@ -1355,32 +1372,7 @@ tabPanel(
               & Sex %in% input$Sex
             )
         })
-        
-        age_sex_time_new_male <- reactive({
-          age_sex %>%
-            filter(
-              Hospital.Clinical.Type %in% input$Hospital_Clinic_Type3
-              & Activity %in% input$Activity_Measure3
-              & Substances %in% input$Substances3
-              & Measure %in% input$Measure3
-              #and the age/sex options
-              & Age %in% input$Age
-              & Sex == "Male"
-            )
-        })
-        
-        age_sex_time_new_female <- reactive({
-          age_sex %>%
-            filter(
-              Hospital.Clinical.Type %in% input$Hospital_Clinic_Type3
-              & Activity %in% input$Activity_Measure3
-              & Substances %in% input$Substances3
-              & Measure %in% input$Measure3
-              #and the age/sex options
-              & Age %in% input$Age
-              & Sex == "Female"
-            )
-        })
+
         
         #Create the main body of the chart.
         output$age_sex_time_plot <- renderPlotly({
