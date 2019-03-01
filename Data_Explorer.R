@@ -34,74 +34,72 @@ library(DT)
 ##############################################.
 
 
-#So initially we need to read in the data. 
-
-#Time trend data- this is for the first two tabs of the time trend broken 
-#down to allow comparison across 1) Geography and 2) Drug admission 
+#So initially we need to read in the data. Currently saved as an rds file.
+All_Data<- readRDS("\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Temp\\Dashboard_Data_Temp\\Data_explorer_data.rds")
 
 #NOTE- the following is temporary and is conditional on 
 #1) Where we decided to eventually store the final data set 
 #2) The final format of the data set
-time_trend <- read.csv("Z:\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Temp\\s05-temp01_XXXX_num_rate.csv")
+time_trend <- All_Data %>% 
+  filter(ï..output == 1.01) %>% 
+  select(-c(ï..output,age_group,sex,simd))
+  
+age_sex <- All_Data %>% 
+  filter(ï..output != 1.04, 
+          geography =="Scotland") %>% 
+  select(-c(ï..output,simd))
 
-#For now I will simply rename the columns to fit with the code (rather than
-#having to go through and change all of the code)
-colnames(time_trend)<- (c("Hospital.Clinical.Type",
-                            "Activity", 
-                            "Geography.Type",
-                            "Geography",
-                            "Years",
-                            "Substance",
-                            "Measure",
-                            "Values"))
+deprivation <- All_Data %>% 
+  filter(ï..output != 1.05, 
+          geography =="Scotland", 
+          simd != "All") %>% 
+  select(-c(ï..output,age_group,sex))
+
 
 #We then create the options for users to choose from in the drop down menus. 
 #Drug Types are created as list to allow different options dependent on the 
 #Hospital admission types
-clinical_types <- as.character(unique(time_trend$Hospital.Clinical.Type))
-activity_measure <- as.character(unique(time_trend$Activity))
-location_types <- as.character(unique(time_trend$Geography.Type))
-locations<- as.character(unique(time_trend$Geography))
+clinical_types <- as.character(unique(All_Data$hos_clin_type))
+activity_measure <- as.character(unique(All_Data$activity_type))
+location_types <- as.character(unique(All_Data$geography_type))
+locations<- as.character(unique(All_Data$geography))
 Scotland<-locations[1:3]
 Health_Board<-locations[4:17]
 ADP<- locations[18:48]
-drug_types<- as.character(unique(time_trend$Substance))
-drug_types1<- list("Main Categories" = as.character(unique(time_trend$Substance)[1:7]),
-                  "Opioids Sub Categories" = as.character(unique(time_trend$Substance)[8:10]))
-drug_types2<- as.character(unique(time_trend$Substance)[1:7])
-measures<- as.character(unique(time_trend$Measure))
+
+geography_list<-list("Scotland" = locations[1:3],
+                     "NHS Board" = locations[4:17],
+                     "ADP" = locations[18:48])
+geography_list["ADP"]
+
+drug_types<- as.character(unique(All_Data$drug_type))
+drug_types1<- list("Main Categories" = as.character(unique(All_Data$drug_type)[1:7]),
+                  "Opioids Sub Categories" = as.character(unique(All_Data$drug_type)[8:10]))
+drug_types2<- as.character(unique(All_Data$drug_type)[1:7])
+measures<- as.character(unique(All_Data$measure))
 
 
-#Age and Sex data- this is for the Age/Sex demographic
-age_sex <- read.csv("Z:\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Dashboard\\Data_Explorer2\\Age_Sex_Skeleton.csv")
-#add in age/sex options
-age <- as.character(unique(age_sex$Age))
-sex <- as.character(unique(age_sex$Sex))
-financial_years <- as.character(unique(age_sex$Years))
+#Add in age, sex, SIMD and financial years options for demographic tabs
+age <- as.character(unique(All_Data$age_group))
+sex <- as.character(unique(All_Data$sex))
+financial_years <- as.character(unique(All_Data$year))
+SIMD<- as.character(unique(All_Data$simd))
+
+
 #we need to look at altering the data for the tornado chart so that male values
 #negative to allow it to work 
 #Convert males to negative (and remove all)
 age_sex_male <- age_sex %>%
-  filter(Sex == "Male"
-         & Age != "All") %>%
-  mutate(Values = Values * -1)
+  filter(sex == "Male"
+         & age_group != "All") %>%
+  mutate(value = value * -1)
 #Then remove females
 age_sex_female <- age_sex %>%
-  filter(Sex == "Female"
-         & Age != "All")
+  filter(sex == "Female"
+         & age_group != "All")
 
 #recombine them into one chart
 age_sex_tornado <- rbind(age_sex_male, age_sex_female)
-
-####Temporary####
-#This is a temporary stop-gap as we move from replacing the skeleton data
-#with real data and the change in factor names
-#The following will be used for selection in the age/sex category
-#until real data is acquired 
-clinical_types2 <- as.character(unique(age_sex$Hospital.Clinical.Type))
-drug_types1_1<- list("Main Categories" = as.character(unique(age_sex$Substance)[c(1,5:10)]),
-                   "Opioids Sub Categories" = as.character(unique(age_sex$Substance)[2:4]))
-drug_types2_2<- as.character(unique(age_sex$Substance)[c(1,5:10)])
 
 
 ##############################################.
@@ -146,7 +144,7 @@ tabsetPanel(
   #
   
   tabPanel(
-    "Home",
+    "Introduction",
     icon = icon("info-circle"),
     style = "float: top; height: 95%; width: 95%;
     background-color: #FFFFFF; border: 0px solid #FFFFFF;",
@@ -163,7 +161,7 @@ tabsetPanel(
       tags$ul(
         tags$li(
           tags$b(actionLink(
-            "link_to_geography", "Geography"
+            "link_to_geography", "Time trend (location comparison)"
           )),
           icon("line-chart"),
           " - shows data on specific DRHS activty over time, by comparing by location."
@@ -171,14 +169,14 @@ tabsetPanel(
       
         tags$li(
           tags$b(actionLink(
-            "link_to_substances", "Substances"
+            "link_to_substances", "Time trend (drug type comparison)"
           )),
           icon("line-chart"),
           " - shows data on specific DRHS activty over time, by comparing by substances."
         ),
       tags$li(
         tags$b(actionLink(
-          "link_to_age_sex", "Age/Sex"
+          "link_to_age_sex", "Age/sex"
         )),
         icon("child"),
         " - shows data on specific DRHS activty by age and sex."
@@ -214,8 +212,8 @@ tabsetPanel(
         "If you have any trouble using the explorer or have further
         questions relating to the data, please contact us at:",
         tags$b(
-          tags$a(href = "mailto:nss.isdtransformingpublishing@nhs.net",
-          "nss.isdtransformingpublishing@nhs.net.")
+          tags$a(href = "mailto:isdsubstancemisuse@nhs.net",
+          "isdsubstancemisuse@nhs.net.")
           )
       )
       
@@ -223,8 +221,7 @@ tabsetPanel(
       )
     #End of tab panel
   ),
-  
-  
+
 ##############################################.
 ############## Geography tab ----
 ##############################################.
@@ -233,11 +230,11 @@ tabsetPanel(
   #Insert the description a
   
   tabPanel(
-    "Geography",
+    "Time trend (location comparison)",
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
-    h3("Geography"),
+    h3("Time Trend"),
     p(
       HTML(
         "This section will contain text about the DRHS data followed
@@ -305,29 +302,7 @@ tabsetPanel(
       
       column(
         4,
-        
-        uiOutput("time_trend_clinical_type")
-        
-      ),
-      
-      column(
-        4,
-        shinyWidgets::pickerInput(
-          inputId = "Activity_Measure",
-          label = "Select Activity Type",
-          choices = activity_measure,
-          selected = "Stays"
-        )
-        ),
-        
-        column(
-          4,
-          
-          uiOutput("time_trend_substance1")
-          ),
-      
-      column(
-        4 ,
+        uiOutput("time_trend_clinical_type"), 
         uiOutput("time_trend_location_types"), 
         downloadButton(outputId = "download_geography", 
                        label = "Download data", 
@@ -339,22 +314,30 @@ tabsetPanel(
                    .geographybutton { color: #FFFFFF; }")
         )
         
-      ), 
-      column(
-        4 ,
-        uiOutput("time_trend_locations")
-      ), 
+      ),
       
-              column(
-                4 ,
-                shinyWidgets::pickerInput(
-                  inputId = "Measure",
-                  label = "Select Measure",
-                  choices = measures,
-                  selected = "Rate"
-                )
+      column(
+        4,
+        shinyWidgets::pickerInput(
+          inputId = "Activity_Measure",
+          label = "Select activity type",
+          choices = activity_measure,
+          selected = "Stays"
+        ),
+        uiOutput("time_trend_locations")
+        ),
         
-      )
+        column(
+          4,
+          
+          uiOutput("time_trend_substance1"),
+          shinyWidgets::pickerInput(
+            inputId = "Measure",
+            label = "Select measure",
+            choices = measures,
+            selected = "Rates"
+          )
+          )
       
     ),
     
@@ -383,11 +366,11 @@ tabsetPanel(
 ##############################################.
 
   tabPanel(
-    "Substances",
+    "Time trend (drug type comparison)",
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
-    h3("Substances"),
+    h3("Time trend"),
     p(
       HTML(
         "This section will contain text about the DRHS data followed
@@ -449,33 +432,16 @@ tabsetPanel(
       # 1 - Hospital/Clinical type
       # 2 - Activity Measure
       # 3 - Geography Type
-      # 4 - Geography (Multiple)
-      # 5 - Substance
+      # 4 - Geography 
+      # 5 - Substance (Multiple)
       # 6 - Measure
       
       column(
-        6,
+        4,
         
-        uiOutput("time_trend_clinical_type2")
-        
-        
-      ),
-      
-      column(
-        6,
-        shinyWidgets::pickerInput(
-          inputId = "Activity_Measure2",
-          label = "Select Activity Type",
-          choices = activity_measure,
-          selected = "Stays"
-        )
-      ),
-      
-      column(
-        6,
+        uiOutput("time_trend_clinical_type2"), 
         uiOutput("time_trend_location_types2"),
-        
-        uiOutput("time_trend_substance2"),
+       
         downloadButton(outputId = "download_substances", 
                        label = "Download data", 
                        class = "substancesbutton"),
@@ -484,20 +450,34 @@ tabsetPanel(
           tags$style(".substancesbutton { background-color: 
                      #0072B2; } 
                      .substancesbutton { color: #FFFFFF; }")
-          )
+        )
+        
+        
       ),
+      
+      column(
+        4,
+        shinyWidgets::pickerInput(
+          inputId = "Activity_Measure2",
+          label = "Select activity type",
+          choices = activity_measure,
+          selected = "Stays"
+        ), 
+        uiOutput("time_trend_locations2")
+      ),
+      
+
      
       
       column(
-        6,
-        uiOutput("time_trend_locations2"),
-        
-        
+        4,
+        uiOutput("time_trend_substance2"),
+
         shinyWidgets::pickerInput(
           inputId = "Measure2",
-          label = "Select Measure",
+          label = "Select measure",
           choices = measures,
-          selected = "Rate"
+          selected = "Rates"
         )
         
         
@@ -531,11 +511,11 @@ tabsetPanel(
 ##############################################.
 
 tabPanel(
-  "Age/Sex",
+  "Age/sex",
   icon = icon("child"),
   style = "height: 95%; width: 95%; background-color: #FFFFFF;
   border: 0px solid #FFFFFF;",
-  h3("Age/Sex"),
+  h3("Age/sex"),
   p(
     HTML(
       "This section will contain text about the DRHS data followed
@@ -600,43 +580,39 @@ tabPanel(
     # 4 - Measure
     
     column(6,
-           uiOutput("age_sex_clinical_type")),
+           uiOutput("age_sex_clinical_type"), 
+           uiOutput("age_sex_substance")),
     
     column(
       6,
       shinyWidgets::pickerInput(
         inputId = "Activity_Measure3",
-        label = "Select Activity Measure",
+        label = "Select activity type",
         choices = activity_measure,
         selected = "Stays"
-      )
-    ),
-    
-    column(6,
-           uiOutput("age_sex_substance")),
-    
-    column(
-      6 ,
+      ),
       shinyWidgets::pickerInput(
         inputId = "Measure3",
-        label = "Select Measure",
+        label = "Select measure",
         choices = measures,
-        selected = "Rate"
+        selected = "Rates"
       )
     )
   ),
   p(
     br(),
     HTML(
-      "Maybe insert some text here at this point to explain clearly that
-      you can choose between the two options here? Maybe opt for a different
-      colour scheme for the options as well? Tried altering the colour scheme
-      but the css code required defeated me"
-    )
+      "Please choose between the following options -"), 
+      tags$ul(
+        tags$li("Time trend to see data over time for particular
+                age and sex catetegories"),
+        tags$li("Bar chart for full breakdown by individual year")
+      )
     ),
   
   #In the main panel of the tab, insert the time trend plot
-  mainPanel(tabsetPanel(
+  mainPanel(width = 12, 
+            tabsetPanel(
     type = "pills",
     tabPanel(
       "Time Trend",
@@ -646,10 +622,10 @@ tabPanel(
       br(),
       br(),
       column(
-        6,
+        4,
         shinyWidgets::pickerInput(
           inputId = "Age",
-          label = "Select Age",
+          label = "Select age",
           choices = age,
           multiple = TRUE,
           selected = "All"
@@ -669,10 +645,10 @@ tabPanel(
       ),
       
       column(
-        6,
+        4,
         shinyWidgets::pickerInput(
           inputId = "Sex",
-          label = "Select Sex",
+          label = "Select sex",
           choices = sex,
           multiple = TRUE,
           selected = "All"
@@ -709,12 +685,12 @@ tabPanel(
       br(),
       br(),
       column(
-        12,
+        8,
         shinyWidgets::sliderTextInput(
           inputId = "Financial_Year",
-          label = "Select Financial Year",
+          label = "Select financial year",
           choices = financial_years,
-          selected = "2017/2018",
+          selected = "2017/18",
           grid = T,
           animate = T,
           width = "1090px"
@@ -743,14 +719,14 @@ tabPanel(
               <strong>Show/hide table</strong></button>"
         ),
         HTML("<div id = 'ageandsexyear' class = 'collapse'>"),
-        br(),
         dataTableOutput("age_sex_year_table"),
         HTML("</div>"),
         br(),
         br()
       )
     )
-    ))
+    )
+    )
   
   #End of tab panel
     ),
@@ -758,11 +734,144 @@ tabPanel(
 ##############################################.
 ############## Deprivation tab ----
 ##############################################.
+
 tabPanel(
   "Deprivation",
-  icon = icon("bar-chart")
+  icon = icon("bar-chart"),
+  style = "height: 95%; width: 95%; background-color: #FFFFFF;
+  border: 0px solid #FFFFFF;",
+  h3("Deprivation"),
+  p(
+    HTML(
+      "This section will contain text about the DRHS data followed
+      by link to the 4 types of buttons and lots of graphs that
+      explains all sort of demographic age/sex"
+    )
     ),
-
+  
+  tags$ul(
+    tags$li(
+      tags$b("Download plot as a png"),
+      icon("camera"),
+      " - click this button to save the graph as an image
+      (please note that Internet Explorer does not support this
+      function)."
+    ),
+    tags$li(
+      tags$b("Zoom"),
+      icon("search"),
+      " - zoom into the graph by clicking this button and then
+      clicking and dragging your mouse over the area of the
+      graph you are interested in."
+    ),
+    tags$li(
+      tags$b("Pan"),
+      icon("move", lib = "glyphicon"),
+      " - adjust the axes of the graph by clicking this button
+      and then clicking and moving your mouse in any direction
+      you want."
+    ),
+    tags$li(
+      tags$b("Reset axes"),
+      icon("home"),
+      " - click this button to return the axes to their
+      default range."
+    )
+    ),
+  
+  p(
+    br(),
+    tags$b(
+      "Note: Statistical disclosure control has been applied to protect
+      patient confidentiality. Therefore, the figures presented here
+      may not be additive and may differ to previous
+      sources of information."
+    )
+    ),
+  
+  p(""),
+  
+  wellPanel(
+    tags$style(
+      ".well { background-color: #FFFFFF;
+      border: 0px solid #336699; }"
+    ),
+    
+    #Insert the reactive filters.
+    #We have Five filters at this point
+    # 1 - Hospital/Clinical type
+    # 2 - Activity Measure
+    # 3 - Substance (dependent on Hospital/Clinic Type)
+    # 4 - Financial Year
+    # 5 - Measure
+    
+    column(4,
+           uiOutput("SIMD_clinical_type"), 
+           
+           shinyWidgets::pickerInput(
+             inputId = "Financial_Year2",
+             label = "Select financial year",
+             choices =  rev(financial_years),
+             selected = "2017/18"), 
+           downloadButton(
+             outputId = "download_SIMD",
+             label = "Download data",
+             class = "mySIMDtrendbutton"
+           ),
+           tags$head(
+             tags$style(
+               ".mySIMDtrendbutton { background-color:
+               #0072B2; }
+               .mySIMDtrendbutton { color: #FFFFFF; }"
+             )
+           )
+    ),
+    
+    column(
+      4,
+      shinyWidgets::pickerInput(
+        inputId = "Activity_Measure4",
+        label = "Select activity type",
+        choices = activity_measure,
+        selected = "Stays"
+      ), 
+      shinyWidgets::pickerInput(
+        inputId = "Measure4",
+        label = "Select measure",
+        choices = measures,
+        selected = "Rates"
+      )
+    ),
+    
+    column(4,
+           uiOutput("SIMD_substance"))
+  ),
+  
+  
+  #In the main panel of the tab, insert the SIMD plot
+  
+  mainPanel(
+    width =12,
+    plotlyOutput("SIMD_plot",
+                 width = "1090px",
+                 height = "600px"),
+    
+    
+    HTML(
+      "<button data-toggle = 'collapse' href = '#SIMDchart'
+      class = 'btn btn-primary' id = 'SIMD_link'>
+      <strong>Show/hide table</strong></button>"
+    ),
+    HTML("<div id = 'SIMDchart' class = 'collapse'>"),
+    br(),
+    dataTableOutput("SIMD_table"),
+    HTML("</div>"),
+    br(),
+    br()
+    
+    
+    )
+  ),
 
 ##############################################.
 ############## Table tab ----
@@ -797,27 +906,32 @@ tabPanel(
       observeEvent(
         input$link_to_geography,
         {
-          updateTabsetPanel(session, "Panels", selected = "Geography")
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Time trend (location comparison)")
         })
       observeEvent(
         input$link_to_substances,
         {
-          updateTabsetPanel(session, "Panels", selected = "Substances")
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Time trend (drug type comparison)")
         })
       observeEvent(
         input$link_to_age_sex,
         {
-          updateTabsetPanel(session, "Panels", selected = "Age/Sex")
+          updateTabsetPanel(session, "Panels",
+                            selected = "Age/sex")
         })
       observeEvent(
         input$link_to_deprivation,
         {
-          updateTabsetPanel(session, "Panels", selected = "Deprivation")
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Deprivation")
         })
       observeEvent(
         input$link_to_table,
         {
-          updateTabsetPanel(session, "Panels", selected = "Table")
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Table")
         })
       
 
@@ -833,96 +947,36 @@ tabPanel(
       
       output$time_trend_location_types <- renderUI({
         shinyWidgets::pickerInput(inputId = "Geography_type", 
-                                  label = "Select Location Type (multiple selection)",
+                                  label = "Select location type (multiple selection)",
                                   choices = location_types, 
                                   selected = "Scotland", 
                                   multiple = TRUE)
       })
-      #As Geography Type "Scotland" now has three options within it
-      #we may have to switch to if/else function. 
 
       output$time_trend_locations <- renderUI({
         shinyWidgets::pickerInput(inputId = "Geography",
-                                  label = "Select Location (multiple selection)",  
-                                  choices =
-                                    if(input$Geography_type != "Scotland")
-                                    {c("Scotland",
-                                       sort(
-                                         unique(
-                                           as.character(
-                                             time_trend$Geography
-                                             [time_trend$Geography.Type == input$Geography_type]
-                                           )
-                                         )
-                                       )
-                                    )
-                                    }
-                                  else{
-                                    sort(
-                                      unique(
-                                        as.character(
-                                          time_trend$Geography
-                                          [time_trend$Geography.Type == input$Geography_type]
-                                        )
-                                      )
-                                    )
-                                    }
-                                  ,
+                                  label = "Select location (multiple selection)",  
+                                  choices = geography_list[input$Geography_type],
                                   multiple = TRUE,
-                                  selected = "Scotland"
+                                  selected = geography_list[input$Geography_type][[1]][1]
         )
       }) 
       
-   
-### The following works in a fashion in that as long as Health Board is chosen as 
-### a location type then the location output works- otherwise not?
-      
-#      output$time_trend_locations <- renderUI({
-#        shinyWidgets::pickerInput(
-#          inputId = "Geography",
-#          label = "Select location (multiple selections allowed)",
-#          choices =
-#            if (input$Geography_type [1] == "Scotland" &
-#                input$Geography_type [2] == "ADP" &
-#                input$Geography_type [3] == "Health Board") {
-#              c(Scotland, Health_Board, ADP)
-#            } else if (input$Geography_type [1] == "Scotland" &
-#                       input$Geography_type [2] == "ADP") {
-#              c(Scotland, ADP)
-#            } else if (input$Geography_type [1] == "Scotland" &
-#                       input$Geography_type [2] == "Health Board") {
-#              c(Scotland, Health_Board)
-#            } else if (input$Geography_type [1] == "ADP" &
-#                       input$Geography_type [2] == "Health Board") {
-#              c(Health_Board, ADP)
-#            } else if (input$Geography_type == "Scotland") {
-#              Scotland
-#            } else if (input$Geography_type == "ADP") {
-#               ADP
-#            } else if (input$Geography_type == "Health Board") {
-#               Health_Board
-#            } 
-#          ,
-#          multiple = TRUE,
-#          selected = "Scotland"
-#        )
-#      })
-      
       output$time_trend_clinical_type <- renderUI({
         shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type", 
-                                  label = "Select Hospital-Clinical Type",
+                                  label = "Select hospital clinical type",
                                   choices = clinical_types, 
                                   selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)")
       })
 
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
-                                  label = "Select Drug Type",  
+                                  label = "Select drug type",  
                                   choices = (if(str_detect(input$Hospital_Clinic_Type, " Overdose"))
                                     drug_types1
                                     else
                                       drug_types2), 
-                                  selected = "Opioids"
+                                  selected = "All"
         )
       }) 
       
@@ -933,11 +987,11 @@ tabPanel(
       geography_new <- reactive({
         time_trend %>%
           filter(
-            Hospital.Clinical.Type %in% input$Hospital_Clinic_Type
-            & Activity %in% input$Activity_Measure
-            & Geography %in% input$Geography
-            & Substance %in% input$Substances
-            & Measure %in% input$Measure 
+            hos_clin_type %in% input$Hospital_Clinic_Type
+            & activity_type %in% input$Activity_Measure
+            & geography %in% input$Geography
+            & drug_type %in% input$Substances
+            & measure %in% input$Measure 
           )
       })
       
@@ -946,16 +1000,16 @@ tabPanel(
         #first the tooltip label
         tooltip_geography <- paste0(
           "Financial year: ",
-          geography_new()$Years,
+          geography_new()$year,
           "<br>",
           "Location: ",
-          geography_new()$Geography,
+          geography_new()$geography,
           "<br>",
-          "Clinical Type: ",
-          geography_new()$Hospital.Clinical.Type,
+          "Drug type: ",
+          geography_new()$drug_type,
           "<br>",
-          geography_new()$Measure,": ",
-          geography_new()$Values
+          geography_new()$measure,": ",
+          geography_new()$value
         )
         
         #Create the main body of the chart.
@@ -963,9 +1017,9 @@ tabPanel(
         plot_ly(
           data = geography_new(),
           #plot- we wont bother at this point with tailored colour
-          x = ~  Years,
-          y = ~  Values,
-          color = ~  Geography,
+          x = ~  year,
+          y = ~  value,
+          color = ~  geography,
             
           #tooltip
           text = tooltip_geography,
@@ -996,8 +1050,8 @@ tabPanel(
                    
                    separatethousands = TRUE,
                    
-                   range = c(0, max(geography_new()$Values, na.rm = TRUE) +
-                               (max(geography_new()$Values, na.rm = TRUE)
+                   range = c(0, max(geography_new()$value, na.rm = TRUE) +
+                               (max(geography_new()$value, na.rm = TRUE)
                                 * 10 / 100)),
                    
                    title = paste0(c(
@@ -1060,26 +1114,26 @@ tabPanel(
       
       geography_new_table<-reactive({time_trend %>%
           filter(
-            Hospital.Clinical.Type %in% input$Hospital_Clinic_Type
-            & Activity %in% input$Activity_Measure
-            & Geography %in% input$Geography
-            & Substance %in% input$Substances
-            & Measure %in% input$Measure
+            hos_clin_type %in% input$Hospital_Clinic_Type
+            & activity_type %in% input$Activity_Measure
+            & geography %in% input$Geography
+            & drug_type %in% input$Substances
+            & measure %in% input$Measure
           )%>%
-          select(Years, Hospital.Clinical.Type,Activity,Geography.Type,
-                 Geography, Substance,Values)
+          select(year, hos_clin_type,activity_type,geography_type,
+                 geography, drug_type,value)
       })
       
       
       #Insert table
       output$geography_table <- renderDataTable({
         datatable(geography_new_table(),
-                  colnames = c("Financial Year",
-                               "Hospital - Clinical Type",
-                               "Activity Measure",
-                               "Location Type",
+                  colnames = c("Financial year",
+                               "Hospital clinical type",
+                               "Activity type",
+                               "Location type",
                                "Location",
-                               "Substance",
+                               "Drug type",
                                input$Measure),
                   rownames = FALSE,
                   style = "Bootstrap"
@@ -1097,9 +1151,9 @@ tabPanel(
                       #Remove row numbers as the CSV file already has row numbers.
                       
                       row.names = FALSE,
-                      col.names = c("Financial year", "Hospital-Clinical Type", 
-                                    "Activity Measure" ,"Location Type","Location", 
-                                    "Substance", 
+                      col.names = c("Financial year", "Hospital clinical type", 
+                                    "Activity type" ,"Location type","Location", 
+                                    "Drug type", 
                                     input$Measure), 
                       sep = ",")
         }
@@ -1117,22 +1171,21 @@ tabPanel(
       
       output$time_trend_location_types2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Geography_type2", 
-                                  label = "Select type of location",
+                                  label = "Select location type",
                                   choices = location_types, 
                                   selected = "Scotland")
       })
       
       output$time_trend_locations2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Geography2",
-                                  label = "Select Location",  
-                                  choices = sort(
+                                  label = "Select location",  
+                                  choices = 
                                     unique(
                                       as.character(
-                                        time_trend$Geography
-                                        [time_trend$Geography.Type %in% input$Geography_type2]
+                                        time_trend$geography
+                                        [time_trend$geography_type %in% input$Geography_type2]
                                       )
-                                    )
-                                  ),
+                                    ),
                                   selected = "Scotland"
         )
       }) 
@@ -1140,20 +1193,20 @@ tabPanel(
       
       output$time_trend_clinical_type2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type2", 
-                                  label = "Select Hospital-Clinical Type",
+                                  label = "Select hospital clinical type",
                                   choices = clinical_types, 
                                   selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)")
       })
       
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
-                                  label = "Select Drug Type (multiple selection)",  
-                                  choices = (if(str_detect(input$Hospital_Clinic_Type2, "Overdose"))
+                                  label = "Select drug type (multiple selection)",  
+                                  choices = (if(str_detect(input$Hospital_Clinic_Type2, " Overdose"))
                                   drug_types1
                                   else
                                   drug_types2),
                                   multiple = TRUE, 
-                                  selected = "Opioids"
+                                  selected = "All"
         )
       }) 
 
@@ -1163,11 +1216,11 @@ tabPanel(
       substances_new <- reactive({
         time_trend %>%
           filter(
-            Hospital.Clinical.Type %in% input$Hospital_Clinic_Type2
-            & Activity %in% input$Activity_Measure2
-            & Geography %in% input$Geography2
-            & Substance %in% input$Substances2
-            & Measure %in% input$Measure2
+            hos_clin_type %in% input$Hospital_Clinic_Type2
+            & activity_type %in% input$Activity_Measure2
+            & geography %in% input$Geography2
+            & drug_type %in% input$Substances2
+            & measure %in% input$Measure2
           )
       })
       
@@ -1176,16 +1229,16 @@ tabPanel(
         #first the tooltip label
                 tooltip_substances <- paste0(
                   "Financial year: ",
-                  substances_new()$Year,
+                  substances_new()$year,
                   "<br>",
                   "Location: ",
-                  substances_new()$Geography,
+                  substances_new()$geography,
                   "<br>",
-                  "Clinical Type: ",
-                  substances_new()$Hospital.Clinical.Type2,
+                  "Drug type: ",
+                  substances_new()$drug_type,
                   "<br>",
-                  substances_new()$Measure,": ",
-                  substances_new()$Values
+                  substances_new()$measure,": ",
+                  substances_new()$value
                 )
         
         #Create the main body of the chart.
@@ -1193,9 +1246,9 @@ tabPanel(
         plot_ly(
           data = substances_new(),
           #plot- we wont bother at this point with tailored colour
-          x = ~  Years,
-          y = ~  Values,
-          color = ~  Substance,
+          x = ~  year,
+          y = ~  value,
+          color = ~  drug_type,
           #tooltip
                     text = tooltip_substances,
                     hoverinfo = "text",
@@ -1225,8 +1278,8 @@ tabPanel(
               
               separatethousands = TRUE,
               
-              range = c(0, max(substances_new()$Values, na.rm = TRUE) +
-                          (max(substances_new()$Values, na.rm = TRUE)
+              range = c(0, max(substances_new()$value, na.rm = TRUE) +
+                          (max(substances_new()$value, na.rm = TRUE)
                            * 10 / 100)),
               
               title = paste0(c(
@@ -1287,24 +1340,24 @@ tabPanel(
       
       substances_new_table<-reactive({time_trend %>%
           filter(
-            Hospital.Clinical.Type %in% input$Hospital_Clinic_Type2
-            & Activity %in% input$Activity_Measure2
-            & Geography %in% input$Geography2
-            & Substance %in% input$Substances2
-            & Measure %in% input$Measure2
+            hos_clin_type %in% input$Hospital_Clinic_Type2
+            & activity_type %in% input$Activity_Measure2
+            & geography %in% input$Geography2
+            & drug_type %in% input$Substances2
+            & measure %in% input$Measure2
           )%>%
-          select(Years, Hospital.Clinical.Type,Activity,Geography,
-                 Substance,Values)
+          select(year, hos_clin_type,activity_type,geography,
+                 drug_type,value)
       })
       
       #Insert table
       output$substances_table <- renderDataTable({
         datatable(substances_new_table(),
-                  colnames = c("Financial Year",
-                               "Hospital - Clinical Type",
-                               "Activity Measure",
+                  colnames = c("Financial year",
+                               "Hospital clinical type",
+                               "Activity type",
                                "Location",
-                               "Substance",
+                               "Drug type",
                                input$Measure2),
                   rownames = FALSE,
                   style = "Bootstrap")
@@ -1318,9 +1371,9 @@ tabPanel(
                         #Remove row numbers as the CSV file already has row numbers.
                         
                         row.names = FALSE,
-                        col.names = c("Financial year", "Hospital-Clinical Type", 
-                                      "Activity Measure" ,"Location", 
-                                      "Substance", 
+                        col.names = c("Financial year", "Hospital clinical type", 
+                                      "Activity type" ,"Location", 
+                                      "Drug type", 
                                       input$Measure2), 
                         sep = ",")
           }
@@ -1334,21 +1387,21 @@ tabPanel(
         output$age_sex_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Hospital_Clinic_Type3",
-            label = "Select Hospital-Clinical Type",
-            choices = clinical_types2,
-            selected = "Combined- Combined "
+            label = "Select hospital clinical type",
+            choices = clinical_types,
+            selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)"
           )
         })
         
         output$age_sex_substance <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Substances3",
-            label = "Select Substance Category",
-            choices = (if (str_detect(input$Hospital_Clinic_Type3, "Overdoses"))
-              drug_types1_1
+            label = "Select drug type",
+            choices = (if (str_detect(input$Hospital_Clinic_Type3, " Overdose"))
+              drug_types1
               else
-                drug_types2_2),
-            selected = "Opiods"
+                drug_types2),
+            selected = "All"
           )
         })
         
@@ -1363,13 +1416,13 @@ tabPanel(
         age_sex_time_new <- reactive({
           age_sex %>%
             filter(
-              Hospital.Clinical.Type %in% input$Hospital_Clinic_Type3
-              & Activity %in% input$Activity_Measure3
-              & Substances %in% input$Substances3
-              & Measure %in% input$Measure3
+              hos_clin_type %in% input$Hospital_Clinic_Type3
+              & activity_type %in% input$Activity_Measure3
+              & drug_type %in% input$Substances3
+              & measure %in% input$Measure3
               #and the age/sex options
-              & Age %in% input$Age
-              & Sex %in% input$Sex
+              & age_group %in% input$Age
+              & sex %in% input$Sex
             )
         })
 
@@ -1379,29 +1432,28 @@ tabPanel(
           #Add in a tooltip
           tooltip_age_sex_time <- paste0(
             "Financial year: ",
-            age_sex_time_new()$Years,
+            age_sex_time_new()$year,
             "<br>",
-            "Hospital - Clinical: ",
-            age_sex_time_new()$Hospital.Clinical.Type,
+            "Age: ",
+            age_sex_time_new()$age_group,
             "<br>",
-            "Substance: ",
-            age_sex_time_new()$Substances,
+            "Sex: ",
+            age_sex_time_new()$sex,
             "<br>",
             input$Measure3,
             ": ",
-            abs(age_sex_time_new()$Values)
+            abs(age_sex_time_new()$value)
           )
           
           plot_ly(
             data = age_sex_time_new(),
             #plot- we wont bother at this point with tailored colour
-            x = ~  Years,
-            y = ~  Values,
-            color = ~  Age,
+            x = ~  year,
+            y = ~  value,
+            color = ~  age_group,
             #so we can try different symbols as well as different linetypes to
             #distinguish between sex.
-            linetype = ~ Sex,
-            symbol = ~ Sex,
+            linetype = ~ sex,
             #tooltip
             text = tooltip_age_sex_time,
             hoverinfo = "text",
@@ -1437,8 +1489,8 @@ tabPanel(
                      
                      separatethousands = TRUE,
                      
-                     range = c(0, max(age_sex_time_new()$Values, na.rm = TRUE) + 
-                                 (max(age_sex_time_new()$Values, na.rm = TRUE) 
+                     range = c(0, max(age_sex_time_new()$value, na.rm = TRUE) + 
+                                 (max(age_sex_time_new()$value, na.rm = TRUE) 
                                   * 10 / 100)), 
                      
                      title = input$Measure3,
@@ -1494,64 +1546,19 @@ tabPanel(
           
         })
         
-        
-        
-        
-        #Hmmm- this does not look great.
-        #Let's try to see if it is better with subplot
-        
-        output$age_sex_time_plot2 <- renderPlotly({
-          subplot(
-            plot_ly(
-              data = age_sex_time_new_male(),
-              #plot- we wont bother at this point with tailored colour
-              x = ~  Years,
-              y = ~  Values,
-              color = ~  Age,
-              #tooltip
-              #text = tooltip_substances,
-              #hoverinfo = "text",
-              #type
-              type = 'scatter',
-              mode = 'lines+markers',
-              marker = list(size = 8),
-              width = 1000,
-              height = 600
-            ),
-            plot_ly(
-              data = age_sex_time_new_female(),
-              #plot- we wont bother at this point with tailored colour
-              x = ~  Years,
-              y = ~  Values,
-              color = ~  Age,
-              #tooltip
-              #text = tooltip_substances,
-              #hoverinfo = "text",
-              #type
-              type = 'scatter',
-              mode = 'lines+markers',
-              marker = list(size = 8),
-              width = 1000,
-              height = 600
-            )
-          )
-        })
-        
-        
-        #we can now add in the table for the bar chart- values
-        #have to be reassigned to positive values
+   
+        #we can now add in the table for the time trend
         age_sex_trend_table <- reactive({
           age_sex %>%
             filter(
-              Hospital.Clinical.Type %in% input$Hospital_Clinic_Type3
-              & Activity %in% input$Activity_Measure3
-              & Substances %in% input$Substances3
-              & Measure %in% input$Measure3
-              & Age %in% input$Age
-              & Sex %in% input$Sex
+              hos_clin_type %in% input$Hospital_Clinic_Type3
+              & activity_type %in% input$Activity_Measure3
+              & drug_type %in% input$Substances3
+              & measure %in% input$Measure3
+              & age_group %in% input$Age
+              & sex %in% input$Sex
             ) %>%
-            select(-Measure)
-          
+            select(-c(measure,geography,geography_type))
         })
         
         #Table
@@ -1561,10 +1568,10 @@ tabPanel(
             style = 'bootstrap',
             rownames = FALSE,
             colnames = c(
-              "Financial Year",
-              "Hospital - Clinical Type",
-              "Activity Measure",
-              "Substance",
+              "Financial year",
+              "Hospital clinical type",
+              "Activity type",
+              "Drug type",
               "Age",
               "Sex",
               input$Measure3
@@ -1584,10 +1591,10 @@ tabPanel(
               
               row.names = FALSE,
               col.names = c(
-                "Financial Year",
-                "Hospital - Clinical Type",
-                "Activity Measure",
-                "Substance",
+                "Financial year",
+                "Hospital clinical type",
+                "Activity type",
+                "Drug type",
                 "Age",
                 "Sex",
                 input$Measure3
@@ -1598,20 +1605,18 @@ tabPanel(
         )
         
         
-        #Still not hugely keen on the subplots either- a bit small.
-        #For now we will move onto the tornado charts (with a slider)
-        #called age_sex_year_plot
-        
-        #first create the data for it
+        ###
+        ###Tornado Chart
+        ###
         
         age_sex_year_new <- reactive({
           age_sex_tornado %>%
             filter(
-              Years %in% input$Financial_Year
-              & Hospital.Clinical.Type %in% input$Hospital_Clinic_Type3
-              & Activity %in% input$Activity_Measure3
-              & Substances %in% input$Substances3
-              & Measure %in% input$Measure3
+              year %in% input$Financial_Year
+              & hos_clin_type %in% input$Hospital_Clinic_Type3
+              & activity_type %in% input$Activity_Measure3
+              & drug_type %in% input$Substances3
+              & measure %in% input$Measure3
             ) %>%
             droplevels()
         })
@@ -1622,28 +1627,28 @@ tabPanel(
           #add in tooltip
           tooltip_age_sex_year <- paste0(
             "Financial year: ",
-            age_sex_year_new()$Years,
+            age_sex_year_new()$year,
             "<br>",
-            "Hospital - Clinical: ",
-            age_sex_year_new()$Hospital.Clinical.Type,
+            "Age: ",
+            age_sex_year_new()$age_group,
             "<br>",
-            "Substance: ",
-            age_sex_year_new()$Substances,
+            "Sex: ",
+            age_sex_year_new()$sex,
             "<br>",
             input$Measure3,
             ": ",
-            abs(age_sex_year_new()$Values)
+            abs(age_sex_year_new()$value)
           )
           
           plot_ly(
             data = age_sex_year_new(),
             
-            x = ~ Values,
-            y = ~ Age,
-            color = ~ Sex,
+            x = ~ value,
+            y = ~ age_group,
+            color = ~ sex,
             
             #Colour palette:
-            #Dark blue for males and light blue for females.
+            #Dark blue for females and light blue for males.
             
             colors = c("#0072B2", "#ADD8E6"),
             
@@ -1690,61 +1695,61 @@ tabPanel(
                 separatethousands = TRUE,
                 tickmode = 'array',
                 range = c(-round(max(
-                  abs(age_sex_year_new()$Values)
+                  abs(age_sex_year_new()$value)
                 )
                 * 110 / 100),
                 round(max(
-                  abs(age_sex_year_new()$Values)
+                  abs(age_sex_year_new()$value)
                 )
                 * 110 / 100)),
                 tickangle = 0,
                 tickvals = c(
                   -round(max(abs(
-                    age_sex_year_new()$Values
+                    age_sex_year_new()$value
                   ))),-round(max(abs(
-                    age_sex_year_new()$Values
+                    age_sex_year_new()$value
                   ))
                   * 66 / 100),-round(max(abs(
-                    age_sex_year_new()$Values
+                    age_sex_year_new()$value
                   ))
                   * 33 / 100),
                   0,
                   round(max(abs(
-                    age_sex_year_new()$Values
+                    age_sex_year_new()$value
                   ))
                   * 33 / 100),
                   round(max(abs(
-                    age_sex_year_new()$Values
+                    age_sex_year_new()$value
                   ))
                   * 66 / 100),
                   round(max(abs(
-                    age_sex_year_new()$Values
+                    age_sex_year_new()$value
                   )))
                 ),
                 ticktext = paste0(as.character(
                   c(
                     round(max(abs(
-                      age_sex_year_new()$Values
+                      age_sex_year_new()$value
                     ))),
                     round(max(abs(
-                      age_sex_year_new()$Values
+                      age_sex_year_new()$value
                     ))
                     * 66 / 100),
                     round(max(abs(
-                      age_sex_year_new()$Values
+                      age_sex_year_new()$value
                     ))
                     * 33 / 100),
                     0,
                     round(max(abs(
-                      age_sex_year_new()$Values
+                      age_sex_year_new()$value
                     ))
                     * 33 / 100),
                     round(max(abs(
-                      age_sex_year_new()$Values
+                      age_sex_year_new()$value
                     ))
                     * 66 / 100),
                     round(max(abs(
-                      age_sex_year_new()$Values
+                      age_sex_year_new()$value
                     )))
                   )
                 )),
@@ -1810,14 +1815,14 @@ tabPanel(
         age_sex_year_table <- reactive({
           age_sex_tornado %>%
             filter(
-              Years %in% input$Financial_Year
-              & Hospital.Clinical.Type %in% input$Hospital_Clinic_Type3
-              & Activity %in% input$Activity_Measure3
-              & Substances %in% input$Substances3
-              & Measure %in% input$Measure3
+              year %in% input$Financial_Year
+              & hos_clin_type %in% input$Hospital_Clinic_Type3
+              & activity_type %in% input$Activity_Measure3
+              & drug_type %in% input$Substances3
+              & measure %in% input$Measure3
             ) %>%
-            select(-Measure) %>%
-            mutate(Values = abs(Values))
+            select(-c(measure,geography,geography_type)) %>%
+            mutate(value = abs(value))
           
         })
         
@@ -1828,10 +1833,10 @@ tabPanel(
             style = 'bootstrap',
             rownames = FALSE,
             colnames = c(
-              "Financial Year",
-              "Hospital - Clinical Type",
-              "Activity Measure",
-              "Substance",
+              "Financial year",
+              "Hospital clinical type",
+              "Activity type",
+              "Drug type",
               "Age",
               "Sex",
               input$Measure3
@@ -1851,10 +1856,10 @@ tabPanel(
               
               row.names = FALSE,
               col.names = c(
-                "Financial Year",
-                "Hospital - Clinical Type",
-                "Activity Measure",
-                "Substance",
+                "Financial year",
+                "Hospital clinical type",
+                "Activity type",
+                "Drug type",
                 "Age",
                 "Sex",
                 input$Measure3
@@ -1870,7 +1875,219 @@ tabPanel(
 ############## Deprivation tab ----
 ##############################################.
       
-      
+        
+        output$SIMD_clinical_type <- renderUI({
+          shinyWidgets::pickerInput(
+            inputId = "Hospital_Clinic_Type4",
+            label = "Select hospital clinical type",
+            choices = clinical_types,
+            selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)"
+          )
+        })
+        
+        output$SIMD_substance <- renderUI({
+          shinyWidgets::pickerInput(
+            inputId = "Substances4",
+            label = "Select drug type",
+            choices = (if (str_detect(input$Hospital_Clinic_Type4, " Overdose"))
+              drug_types1
+              else
+                drug_types2),
+            selected = "All"
+          )
+        })
+        
+        
+        #Filter it by options for time trend
+        SIMD_new <- reactive({
+          deprivation %>%
+            filter(
+              hos_clin_type %in% input$Hospital_Clinic_Type4
+              & activity_type %in% input$Activity_Measure4
+              & drug_type %in% input$Substances4
+              & measure %in% input$Measure4
+              #and the year options
+              & year %in% input$Financial_Year2
+            )
+        })
+        
+        
+        
+        #Create the main body of the chart.
+        output$SIMD_plot <- renderPlotly({
+          #Add in a tooltip
+          tooltip_SIMD <- paste0(
+            "Financial year: ",
+            SIMD_new()$year,
+            "<br>",
+            "Deprivation index: ",
+            SIMD_new()$simd,
+            "<br>",
+            "Substance: ",
+            SIMD_new()$drug_type,
+            "<br>",
+            input$Measure4,
+            ": ",
+            SIMD_new()$value
+          )
+          
+          plot_ly(
+            data = SIMD_new(),
+            #plot- we wont bother at this point with tailored colour
+            x = ~  simd,
+            y = ~  value,
+            #tooltip
+            text = tooltip_SIMD,
+            hoverinfo = "text",
+            #type
+            type = 'bar',
+            width = 1000,
+            height = 600
+          ) %>%
+            
+            #Make the graph title reactive.
+            
+            layout(title = 
+                     paste0(input$Hospital_Clinic_Type4,  ", "  ,
+                            input$Activity_Measure4 , " ",input$Measure4,
+                            " by ", input$Substances4),
+                   
+                   separators = ".",
+                   
+                   #We need to fix the range of the y axis, as R refuses to set...
+                   #the lower end of this axis to zero.
+                   #The following "range" command fixes the lower end to...
+                   #zero, and calculates the upper end as the maximum...
+                   #number visualised in the graph + 10% of this number.
+                   #Also, wrap the y axis title in blank spaces so it doesn't...
+                   #overlap with the y axis tick labels.
+                   #Finally, make the y axis title reactive.
+                   
+                   yaxis = list(
+                     
+                     exponentformat = "none",
+                     
+                     separatethousands = TRUE,
+                     
+                     range = c(0, max(SIMD_new()$value, na.rm = TRUE) + 
+                                 (max(SIMD_new()$value, na.rm = TRUE) 
+                                  * 10 / 100)), 
+                     
+                     title = input$Measure4,
+                     showline = TRUE, 
+                     ticks = "outside"
+                     
+                   ),
+                   
+                   #Set the tick angle to minus 45. It's the only way for the x...
+                   #axis tick labels (fin. years) to display without overlapping...
+                   #with each other.
+                   #Wrap the x axis title in blank spaces so that it doesn't...
+                   #overlap with the x axis tick labels.
+                   
+                   xaxis = list(tickangle = -45, 
+                                title = paste0(c(rep("&nbsp;", 20),
+                                                 "<br>", 
+                                                 "SIMD",
+                                                 rep("&nbsp;", 20),
+                                                 rep("\n&nbsp;", 3)),
+                                               collapse = ""),
+                                showline = TRUE, 
+                                ticks = "outside"),
+                   
+                   #Fix the margins so that the graph and axis titles have enough...
+                   #room to display nicely.
+                   #Set the font sizes.
+                   
+                   margin = list(l = 90, r = 60, b = 120, t = 90),
+                   font = list(size = 13),
+                   titlefont = list(size = 15),
+                   
+                   #Insert a legend so that the user knows which colour...
+                   #corresponds to which location of treatment.
+                   #Make the legend background and legend border white.              
+                   
+                   ##REMOVE LEGEND FOR NOW- until we have discussed whether 
+                   #to have multiple options for any categories
+                   showlegend = FALSE,
+                   legend = list(orientation = 'h',
+                                 x = 0, 
+                                 y = -0.5,
+                                 bgcolor = 'rgba(255, 255, 255, 0)', 
+                                 bordercolor = 'rgba(255, 255, 255, 0)')) %>%
+            
+            #Remove unnecessary buttons from the modebar.
+            
+            config(displayModeBar = TRUE,
+                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d', 
+                                                 'zoomOut2d', 'autoScale2d', 
+                                                 'toggleSpikelines', 
+                                                 'hoverCompareCartesian', 
+                                                 'hoverClosestCartesian'), 
+                   displaylogo = F, collaborate = F, editable = F)
+          
+        })
+        
+        
+        
+        
+        
+        #we can now add in the table for the bar chart- values
+        #have to be reassigned to positive values
+        SIMD_table <- reactive({
+          deprivation %>%
+            filter(
+              hos_clin_type %in% input$Hospital_Clinic_Type4
+              & activity_type %in% input$Activity_Measure4
+              & drug_type %in% input$Substances4
+              & measure %in% input$Measure4
+              & year %in% input$Financial_Year2
+            )%>%
+            select(-c(measure,geography_type))
+        })
+        
+        #Table
+        output$SIMD_table <- renderDataTable({
+          datatable(
+            SIMD_table(),
+            style = 'bootstrap',
+            rownames = FALSE,
+            colnames = c(
+              "Financial year",
+              "Hospital clinical type",
+              "Activity type",
+              "Location",
+              "Drug type",
+              "Deprivation index",
+              input$Measure4
+            )
+          )
+        })
+        
+        #Download button
+        
+        output$download_SIMD <- downloadHandler(
+          filename = 'deprivation.csv',
+          content = function(file) {
+            write.table(
+              SIMD_table(),
+              file,
+              #Remove row numbers as the CSV file already has row numbers.
+              
+              row.names = FALSE,
+              col.names = c(
+                "Financial year",
+                "Hospital clinical type",
+                "Activity type",
+                "Location",
+                "Drug type",
+                "Deprivation index",
+                input$Measure4
+              ),
+              sep = ","
+            )
+          }
+        )
       
 ##############################################.
 ############## Table tab ----
