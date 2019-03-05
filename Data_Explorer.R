@@ -15,8 +15,6 @@
 # Tab 2) Time Trend (Geography)
 # Tab 3) Time Trend (Substances)
 # Tab 4) Age/Sex 
-
-#There are two further tabs that are present but content still needs to be loaded
 # Tab 5) Deprivation
 # Tab 6) Table
 
@@ -35,11 +33,13 @@ library(DT)
 
 
 #So initially we need to read in the data. Currently saved as an rds file.
-All_Data<- readRDS("\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Temp\\Dashboard_Data_Temp\\Data_explorer_data.rds")
-
 #NOTE- the following is temporary and is conditional on 
-#1) Where we decided to eventually store the final data set 
-#2) The final format of the data set
+#where we decided to eventually store the final data set 
+
+path<- "\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Temp\\Dashboard_Data_Temp\\"
+All_Data<- readRDS(paste0(path,"Data_explorer_data.rds"))
+
+
 time_trend <- All_Data %>% 
   filter(ï..output == 1.01) %>% 
   select(-c(ï..output,age_group,sex,simd))
@@ -47,13 +47,13 @@ time_trend <- All_Data %>%
 age_sex <- All_Data %>% 
   filter(ï..output != 1.04, 
           geography =="Scotland") %>% 
-  select(-c(ï..output,simd))
+  select(-c(ï..output,simd, geography_type,geography))
 
 deprivation <- All_Data %>% 
   filter(ï..output != 1.05, 
           geography =="Scotland", 
           simd != "All") %>% 
-  select(-c(ï..output,age_group,sex))
+  select(-c(ï..output,age_group,sex, geography_type,geography))
 
 
 #We then create the options for users to choose from in the drop down menus. 
@@ -100,6 +100,63 @@ age_sex_female <- age_sex %>%
 
 #recombine them into one chart
 age_sex_tornado <- rbind(age_sex_male, age_sex_female)
+
+#we can now read in the data for the tables that are not visualized in 
+#the current explorer as well as those from the data trend 
+
+activity_summary<-read.csv(paste0(path,"activity_summary.csv"))
+drug_summary<-read.csv(paste0(path,"drug_summary.csv"))
+demographic_summary<- read.csv(paste0(path,"demographic_summary.csv"))
+
+length_of_stay<-read.csv(paste0(path,"length_of_stay.csv"))
+emergency_admissions<-read.csv(paste0(path,"emergency_admissions.csv"))
+drug_type_by_hospital<-read.csv(paste0(path,"drug_type_by_hospital.csv"))
+
+#We can then drop unnecessary columns from these tables
+
+activity_summary<-activity_summary %>% 
+  select(year,hos_clin_type,activity_type,
+         geography_type,geography,value)
+
+drug_summary<-drug_summary %>% 
+  select(year,hos_clin_type,drug_type,
+         geography_type,geography,value)
+
+demographic_summary<-demographic_summary %>% 
+  select(year,hos_clin_type,
+         geography_type,geography,
+         age_group,sex,simd,
+         value)
+
+length_of_stay <- length_of_stay %>% 
+  select(-c(ï..output,activity_type,num_more_1week,perc_more_1week))
+
+emergency_admissions <- emergency_admissions %>% 
+  select(-c(ï..output,activity_type,num_adm_other,perc_adm_other))
+
+drug_type_by_hospital <- drug_type_by_hospital %>% 
+  select(-c(ï..output, geography_type,geography,
+             age_group,sex,simd))
+
+#Currently SIMD is read in as '1=' and '5=' which does not work in the table
+#workaround for now is to recode to '1-' and '5-' until changed in SPPS syntax
+
+deprivation <- deprivation %>% 
+  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
+                              "5=least deprived" = "5 - least deprived"))
+
+demographic_summary<- demographic_summary %>% 
+  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
+                        "5=least deprived" = "5 - least deprived"))
+
+length_of_stay <- length_of_stay %>% 
+  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
+                        "5=least deprived" = "5 - least deprived"))
+
+emergency_admissions <-emergency_admissions %>% 
+  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
+                        "5=least deprived" = "5 - least deprived"))
+  
 
 
 ##############################################.
@@ -193,7 +250,7 @@ tabsetPanel(
           "link_to_table", "Table"
         )),
         icon("table"),
-        " - data tables that underly graphs."
+        " - data tables that underly graphs, as well as additional tables not visualised."
       )
       ),
       
@@ -212,8 +269,8 @@ tabsetPanel(
         "If you have any trouble using the explorer or have further
         questions relating to the data, please contact us at:",
         tags$b(
-          tags$a(href = "mailto:isdsubstancemisuse@nhs.net",
-          "isdsubstancemisuse@nhs.net.")
+          tags$a(href = "mailto:NSS.isdsubstancemisuse@nhs.net",
+          "NSS.isdsubstancemisuse@nhs.net.")
           )
       )
       
@@ -234,7 +291,7 @@ tabsetPanel(
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
-    h3("Time Trend"),
+    h3("Time trend (location comparison)"),
     p(
       HTML(
         "This section will contain text about the DRHS data followed
@@ -370,7 +427,7 @@ tabsetPanel(
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
-    h3("Time trend"),
+    h3("Time trend (drug type comparison)"),
     p(
       HTML(
         "This section will contain text about the DRHS data followed
@@ -625,7 +682,7 @@ tabPanel(
         4,
         shinyWidgets::pickerInput(
           inputId = "Age",
-          label = "Select age",
+          label = "Select age (multiple selection)",
           choices = age,
           multiple = TRUE,
           selected = "All"
@@ -648,7 +705,7 @@ tabPanel(
         4,
         shinyWidgets::pickerInput(
           inputId = "Sex",
-          label = "Select sex",
+          label = "Select sex (multiple selection)",
           choices = sex,
           multiple = TRUE,
           selected = "All"
@@ -878,9 +935,92 @@ tabPanel(
 ##############################################.
 
 tabPanel(
-  "Table",
-  icon = icon("table")
-)
+  "Table", 
+  icon = icon("table"), 
+  style = "float: top; height: 95%; width: 95%; background-color: #FFFFFF; 
+  border: 0px solid #FFFFFF;", 
+  h3("Table"), 
+  p(
+    
+  ),
+  
+  p(
+    HTML(
+      "This section allows you to view the data in table format. Use the  
+    filter below to visualise the dataset you are interested in. The list 
+    includes datasets used in the 'Data trends' page as well as the data presente here.
+    It also includes data that is not visualised in this dashboard that covers- ." ), 
+    tags$ul(
+      tags$li("Length of stay"),
+      tags$li("Emergency admissions"),
+      tags$li("Drug type by hospital")
+    ), 
+    "You can then use the 
+    filters situated below the column names of the table to modify the table
+    as you please. To download your data selection as a CSV file, use the 
+    'Download data' button."),
+  
+  p(
+    br(),
+    tags$b(
+      "Note: Statistical disclosure control has been applied to protect 
+      patient confidentiality. Therefore, the figures presented here 
+      may not be additive and may differ to previous 
+      sources of information."
+    )
+    ),
+  
+  p(""),
+  
+  wellPanel(tags$style(".well { background-color: #FFFFFF; 
+                       border: 0px solid #336699; }"),
+            
+            #We are only using one filter here, which contains the...
+            #names of the files.
+            
+            column(6,
+                   
+                   shinyWidgets::pickerInput(
+                     inputId = "table_filenames", 
+                     label = "Select data file",  
+                     choices = c("Time trend (Data explorer)", 
+                                 "Age/sex (Data explorer)", 
+                                 "Deprivation (Data explorer)", 
+                                 "Activity summary (Data trend)",
+                                 "Drug summary (Data trend)",
+                                 "Demographic summary (Data trend)",
+                                 "Length of stay",
+                                 "Emergency admissions",
+                                 "Drug type by hospital"), 
+                     width = "95%"
+                   )
+                   
+            ), 
+            
+            #We also insert the 'Download data' button.
+            
+            column(4,
+                   
+                   downloadButton(outputId = 'download_table', 
+                                  label = 'Download data', 
+                                  class = "mytablebutton", 
+                                  style = "margin: 25px 10px 25px 10px")
+                   
+            )
+  ),
+  
+  tags$head(
+    tags$style(".mytablebutton { background-color: #0072B2; } 
+                    .mytablebutton { color: #FFFFFF; }")
+  ),
+  
+  
+  #Finally, insert the actual table.
+  
+  mainPanel(width = 12, 
+            dataTableOutput("table_tab")) 
+  
+    )
 
   #End of tabset panel
     )
@@ -1038,9 +1178,9 @@ tabPanel(
           layout(
             #Title
           title =
-                   paste0( input$Hospital_Clinic_Type,  ", "  ,
-                            input$Activity_Measure , " ",input$Measure,
-                           " by ", input$Geography_type),
+                   paste0( input$Hospital_Clinic_Type,  " "  ,
+                            str_sub(input$Activity_Measure,1,-2) , " ",input$Measure,
+                           " by location"),
                  separators = ".",
           
           #y=axis formatting       
@@ -1266,9 +1406,9 @@ tabPanel(
           layout(
             #Title
             title =
-              paste0( input$Hospital_Clinic_Type2,  ", "  ,
-                      input$Activity_Measure2 , " ",input$Measure2,
-                      " in ", input$Geography2),
+              paste0( input$Hospital_Clinic_Type2,  " "  ,
+                      str_sub(input$Activity_Measure2,1,-2), " ",input$Measure2,
+                      " by drug type"),
             separators = ".",
             
             #y=axis formatting       
@@ -1468,8 +1608,8 @@ tabPanel(
             #Make the graph title reactive.
             
             layout(title = 
-                     paste0(input$Hospital_Clinic_Type3,  ", "  ,
-                            input$Activity_Measure3 , " ",input$Measure3,
+                     paste0(input$Hospital_Clinic_Type3,  " "  ,
+                            str_sub(input$Activity_Measure3,1,-2) , " ",input$Measure3,
                             " by ", input$Substances3),
                    
                    separators = ".",
@@ -1621,6 +1761,16 @@ tabPanel(
             droplevels()
         })
         
+        age_sex_year_new_axis <- reactive({
+          age_sex_tornado %>%
+            filter(hos_clin_type %in% input$Hospital_Clinic_Type3
+              & activity_type %in% input$Activity_Measure3
+              & drug_type %in% input$Substances3
+              & measure %in% input$Measure3
+            ) %>%
+            droplevels()
+        })
+        
         
         #then plot it
         output$age_sex_year_plot <- renderPlotly({
@@ -1695,61 +1845,61 @@ tabPanel(
                 separatethousands = TRUE,
                 tickmode = 'array',
                 range = c(-round(max(
-                  abs(age_sex_year_new()$value)
+                  abs(age_sex_year_new_axis()$value)
                 )
                 * 110 / 100),
                 round(max(
-                  abs(age_sex_year_new()$value)
+                  abs(age_sex_year_new_axis()$value)
                 )
                 * 110 / 100)),
                 tickangle = 0,
                 tickvals = c(
                   -round(max(abs(
-                    age_sex_year_new()$value
+                    age_sex_year_new_axis()$value
                   ))),-round(max(abs(
-                    age_sex_year_new()$value
+                    age_sex_year_new_axis()$value
                   ))
                   * 66 / 100),-round(max(abs(
-                    age_sex_year_new()$value
+                    age_sex_year_new_axis()$value
                   ))
                   * 33 / 100),
                   0,
                   round(max(abs(
-                    age_sex_year_new()$value
+                    age_sex_year_new_axis()$value
                   ))
                   * 33 / 100),
                   round(max(abs(
-                    age_sex_year_new()$value
+                    age_sex_year_new_axis()$value
                   ))
                   * 66 / 100),
                   round(max(abs(
-                    age_sex_year_new()$value
+                    age_sex_year_new_axis()$value
                   )))
                 ),
                 ticktext = paste0(as.character(
                   c(
                     round(max(abs(
-                      age_sex_year_new()$value
+                      age_sex_year_new_axis()$value
                     ))),
                     round(max(abs(
-                      age_sex_year_new()$value
+                      age_sex_year_new_axis()$value
                     ))
                     * 66 / 100),
                     round(max(abs(
-                      age_sex_year_new()$value
+                      age_sex_year_new_axis()$value
                     ))
                     * 33 / 100),
                     0,
                     round(max(abs(
-                      age_sex_year_new()$value
+                      age_sex_year_new_axis()$value
                     ))
                     * 33 / 100),
                     round(max(abs(
-                      age_sex_year_new()$value
+                      age_sex_year_new_axis()$value
                     ))
                     * 66 / 100),
                     round(max(abs(
-                      age_sex_year_new()$value
+                      age_sex_year_new_axis()$value
                     )))
                   )
                 )),
@@ -1948,8 +2098,8 @@ tabPanel(
             #Make the graph title reactive.
             
             layout(title = 
-                     paste0(input$Hospital_Clinic_Type4,  ", "  ,
-                            input$Activity_Measure4 , " ",input$Measure4,
+                     paste0(input$Hospital_Clinic_Type4,  " "  ,
+                            str_sub(input$Activity_Measure4,1,-2), " ",input$Measure4,
                             " by ", input$Substances4),
                    
                    separators = ".",
@@ -2093,6 +2243,147 @@ tabPanel(
 ############## Table tab ----
 ##############################################.
       
+        #On to the final tab, which is the Table tab.
+        #The following piece of syntax tells R to switch between files...
+        #according to the user's input in the filter SELECT DATA FILE.
+        #The files below are the ones we read into R at the very beginning.
+        #However, they require a few transformations before they can be displayed...
+        #as a table.
+        
+        data_table <- reactive({
+          switch(input$table_filenames,
+                 "Time trend (Data explorer)" = time_trend %>%
+                   rename("Financial year" = year, 
+                          "Hospital clinical type" = hos_clin_type,
+                          "Activity type" = activity_type,
+                          "Location type" = geography_type, 
+                          "Location" = geography, 
+                          "Drug type" = drug_type,
+                          "Measure" = measure,
+                          "Number" = value) ,
+                 "Age/sex (Data explorer)" = age_sex %>%
+                   rename("Financial year" = year, 
+                          "Hospital clinical type" = hos_clin_type,
+                          "Activity type" = activity_type,
+                          "Drug type" = drug_type,
+                          "Age group" = age_group,
+                          "Sex" = sex,
+                          "Measure" = measure,
+                          "Number" = value),
+                 "Deprivation (Data explorer)" = deprivation %>%
+                   rename("Financial year" = year, 
+                          "Hospital clinical type" = hos_clin_type,
+                          "Activity type" = activity_type,
+                          "Drug type" = drug_type,
+                          "Deprivation" = simd,
+                          "Measure" = measure,
+                          "Number" = value),
+                 "Activity summary (Data trend)" = activity_summary %>% 
+                 rename("Financial year" = year, 
+                        "Hospital clinical type" = hos_clin_type,
+                        "Activity type" = activity_type,
+                        "Location type" = geography_type, 
+                        "Location" = geography, 
+                        "Rate" = value),
+                 "Drug summary (Data trend)" = drug_summary %>% 
+                 rename("Financial year" = year, 
+                        "Hospital clinical type" = hos_clin_type,
+                        "Location type" = geography_type, 
+                        "Location" = geography, 
+                        "Drug type" = drug_type,
+                        "Rate" = value),
+                 "Demographic summary (Data trend)" = demographic_summary %>% 
+                 rename("Financial year" = year, 
+                        "Hospital clinical type" = hos_clin_type,
+                        "Location type" = geography_type, 
+                        "Location" = geography, 
+                        "Age group" = age_group,
+                        "Sex" = sex,
+                        "Deprivation index" = simd,
+                        "Rate" = value),
+                 "Length of stay" = length_of_stay %>% 
+                   rename("Financial year" = year, 
+                          "Hospital clinical type" = hos_clin_type,
+                          "Location type" = geography_type, 
+                          "Location" = geography, 
+                          "Drug type" = drug_type,
+                          "Age group" = age_group,
+                          "Sex" = sex,
+                          "Deprivation index" = simd,
+                          "Number < 1 week" = num_less_1week,
+                          "Percentage <1 week" = perc_less_1week,
+                          "Total" = total, 
+                          "Median length of stay" = med_los
+                   ),
+                 "Emergency admissions" = emergency_admissions %>% 
+                   rename("Financial year" = year, 
+                          "Hospital clinical type" = hos_clin_type,
+                          "Location type" = geography_type, 
+                          "Location" = geography, 
+                          "Drug type" = drug_type,
+                          "Age group" = age_group,
+                          "Sex" = sex,
+                          "Deprivation index" = simd,
+                          "Number emergency admissions" = num_adm_emer,
+                          "Percentage emergency admissions" = perc_adm_emer,
+                          "Total" = total
+                     
+                   ),
+                 "Drug type by hospital" = drug_type_by_hospital %>% 
+                   rename("Financial year" = year, 
+                          "Hospital clinical type" = hos_clin_type,
+                          "Activity type" = activity_type, 
+                          "Drug type" = drug_type,
+                          "Number SMR01" = num_source01,
+                          "Number SMR04" = num_source04,
+                          "Number both" = num_sourceBOTH,
+                          "Percentage SMR01" = perc_source01,
+                          "Percentage SMR04" = perc_source04,
+                          "Percentage both" = perc_sourceBOTH, 
+                          "Total" = total
+                   )
+                 
+                 
+                 
+          )
+        })
+        
+        
+        #Create the actual table for the Table tab.
+        
+        output$table_tab <- renderDataTable({
+          datatable(data_table(), 
+                    style = 'bootstrap', 
+                    class = 'table-bordered table-condensed',
+                    rownames = FALSE, 
+                    options = list(
+                      pageLength = 20, 
+                      autoWidth = TRUE, 
+                      dom = 'tip'),
+                    
+                    #Insert filters at the top of each column.
+                    
+                    filter = list(position = 'top'))
+        }) 
+        
+        #We also create a download button for the table tab.
+        
+        output$download_table <- downloadHandler(
+          filename = 'table_data.csv', 
+          content = function(file) { 
+            write.csv(
+              
+              #The command "input[["table_tab_rows_all"]]" tells R to create a CSV...
+              #file that takes into account the user's input in the filters below...
+              #the column names.
+              
+              data_table()[input[["table_tab_rows_all"]], ], 
+              file, 
+              row.names = FALSE
+            )
+          } 
+        )
+        
       
       #End of server
     }
