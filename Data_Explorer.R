@@ -31,59 +31,70 @@ library(DT)
 ############## Reading In Data ----
 ##############################################.
 
-
 #So initially we need to read in the data. Currently saved as an rds file.
 #NOTE- the following is temporary and is conditional on 
 #where we decided to eventually store the final data set 
 
-path<- "\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Temp\\Dashboard_Data_Temp\\"
-All_Data<- readRDS(paste0(path,"Data_explorer_data.rds"))
+path<- "\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publications\\DRHS\\20181218\\Temp\\"
 
+#Data to be used for explorer and trend pages
+all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY.rds"))
 
-time_trend <- All_Data %>% 
-  filter(ï..output == 1.01) %>% 
-  select(-c(ï..output,age_group,sex,simd))
-  
-age_sex <- All_Data %>% 
-  filter(ï..output != 1.04, 
-          geography =="Scotland") %>% 
-  select(-c(ï..output,simd, geography_type,geography))
+all_data<-all_data%>% 
+  mutate(value = round(value, 2))
 
-deprivation <- All_Data %>% 
-  filter(ï..output != 1.05, 
-          geography =="Scotland", 
+#Data that is not visualized  
+length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY.rds"))
+emergency_admissions<- readRDS(paste0(path,"s08-temp08_emerAdm_R-SHINY.rds"))
+drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY.rds"))
+
+#filter data set for data for each tab
+
+time_trend <- all_data %>% 
+  filter(age_group == "All",
+         sex == "All", 
+         simd == "All") %>% 
+  select(-c(age_group,sex,simd))
+
+age_sex <- all_data %>% 
+  filter(geography =="Scotland", 
+         simd== "All"
+         ) %>% 
+  select(-c(simd, geography_type,geography))
+
+deprivation <- all_data %>% 
+  filter(geography =="Scotland", 
           simd != "All") %>% 
-  select(-c(ï..output,age_group,sex, geography_type,geography))
+  select(-c(age_group,sex, geography_type,geography))
 
 
 #We then create the options for users to choose from in the drop down menus. 
 #Drug Types are created as list to allow different options dependent on the 
 #Hospital admission types
-clinical_types <- as.character(unique(All_Data$hos_clin_type))
-activity_measure <- as.character(unique(All_Data$activity_type))
-location_types <- as.character(unique(All_Data$geography_type))
-locations<- as.character(unique(All_Data$geography))
+clinical_types <- as.character(unique(all_data$hos_clin_type))
+activity_measure <- as.character(unique(all_data$activity_type))
+location_types <- as.character(unique(all_data$geography_type))
+locations<- as.character(unique(all_data$geography))
 Scotland<-locations[1:3]
 Health_Board<-locations[4:17]
 ADP<- locations[18:48]
 
 geography_list<-list("Scotland" = locations[1:3],
-                     "NHS Board" = locations[4:17],
-                     "ADP" = locations[18:48])
-geography_list["ADP"]
+                     "NHS Board of residence" = locations[4:17],
+                     "ADP of residence" = locations[18:48])
 
-drug_types<- as.character(unique(All_Data$drug_type))
-drug_types1<- list("Main Categories" = as.character(unique(All_Data$drug_type)[1:7]),
-                  "Opioids Sub Categories" = as.character(unique(All_Data$drug_type)[8:10]))
-drug_types2<- as.character(unique(All_Data$drug_type)[1:7])
-measures<- as.character(unique(All_Data$measure))
+drug_types<- as.character(unique(all_data$drug_type))
+drug_types1<- list("Main Categories" = as.character(unique(all_data$drug_type)[1:7]),
+                  "Opioids Sub Categories" = as.character(unique(all_data$drug_type)[8:10]))
+drug_types2<- as.character(unique(all_data$drug_type)[1:7])
+measures<- as.character(unique(all_data$measure))
 
 
 #Add in age, sex, SIMD and financial years options for demographic tabs
-age <- as.character(unique(All_Data$age_group))
-sex <- as.character(unique(All_Data$sex))
-financial_years <- as.character(unique(All_Data$year))
-SIMD<- as.character(unique(All_Data$simd))
+age <- as.character(unique(all_data$age_group))
+sex <- as.character(unique(all_data$sex))
+financial_years <- as.character(unique(all_data$year))
+SIMD<- as.character(unique(all_data$simd))
 
 
 #we need to look at altering the data for the tornado chart so that male values
@@ -101,19 +112,35 @@ age_sex_female <- age_sex %>%
 #recombine them into one chart
 age_sex_tornado <- rbind(age_sex_male, age_sex_female)
 
-#we can now read in the data for the tables that are not visualized in 
-#the current explorer as well as those from the data trend 
+#we can now set up the data for that from the data trend page
 
-activity_summary<-read.csv(paste0(path,"activity_summary.csv"))
-drug_summary<-read.csv(paste0(path,"drug_summary.csv"))
-demographic_summary<- read.csv(paste0(path,"demographic_summary.csv"))
+activity_summary<-all_data %>% 
+  filter(drug_type == "All", 
+        age_group == "All",
+        sex == "All",
+        simd == "All", 
+        measure == "Rate")
 
-length_of_stay<-read.csv(paste0(path,"length_of_stay.csv"))
-emergency_admissions<-read.csv(paste0(path,"emergency_admissions.csv"))
-drug_type_by_hospital<-read.csv(paste0(path,"drug_type_by_hospital.csv"))
+drug_summary<- all_data %>% 
+  filter(activity_type == "Stays",
+         drug_type %in% drug_types2,
+         drug_type != "All",
+         age_group == "All",
+         sex == "All",
+         simd == "All", 
+         measure == "Rate")
 
-#We can then drop unnecessary columns from these tables
 
+demographic_summary<- all_data  %>% 
+  filter(drug_type == "All",
+         activity_type =="Patients",
+         ((age_group != "All" & sex == "All" & simd =="All")|
+            (age_group == "All" & sex != "All" & simd =="All")|
+            (age_group == "All" & sex == "All" & simd !="All")), 
+         measure == "Rate") 
+
+
+#Kepp only those columns that are necessary
 activity_summary<-activity_summary %>% 
   select(year,hos_clin_type,activity_type,
          geography_type,geography,value)
@@ -128,34 +155,30 @@ demographic_summary<-demographic_summary %>%
          age_group,sex,simd,
          value)
 
+
+
+#We can then drop unnecessary columns from these tables
+
 length_of_stay <- length_of_stay %>% 
-  select(-c(ï..output,activity_type,num_more_1week,perc_more_1week))
+  select(-activity_type)%>% 
+  mutate(perc_less_1week = round(perc_less_1week, 2), 
+         perc_more_1week = round(perc_more_1week, 2))
 
 emergency_admissions <- emergency_admissions %>% 
-  select(-c(ï..output,activity_type,num_adm_other,perc_adm_other))
+  select(-activity_type)%>% 
+  mutate(perc_adm_emer = round(perc_adm_emer, 2), 
+         perc_adm_other = round(perc_adm_other, 2))
 
 drug_type_by_hospital <- drug_type_by_hospital %>% 
-  select(-c(ï..output, geography_type,geography,
-             age_group,sex,simd))
+  select(-c(geography_type,geography,
+             age_group,sex,simd))%>% 
+  mutate(perc_source01 = round(perc_source01, 2), 
+         perc_source04 = round(perc_source04, 2), 
+         perc_sourceBOTH = round(perc_sourceBOTH, 2))
 
 #Currently SIMD is read in as '1=' and '5=' which does not work in the table
 #workaround for now is to recode to '1-' and '5-' until changed in SPPS syntax
 
-deprivation <- deprivation %>% 
-  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
-                              "5=least deprived" = "5 - least deprived"))
-
-demographic_summary<- demographic_summary %>% 
-  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
-                        "5=least deprived" = "5 - least deprived"))
-
-length_of_stay <- length_of_stay %>% 
-  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
-                        "5=least deprived" = "5 - least deprived"))
-
-emergency_admissions <-emergency_admissions %>% 
-  mutate(simd =  recode(simd, "1=most deprived" = "1 - most deprived", 
-                        "5=least deprived" = "5 - least deprived"))
   
 
 
@@ -1106,7 +1129,7 @@ tabPanel(
         shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type", 
                                   label = "Select hospital clinical type",
                                   choices = clinical_types, 
-                                  selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)")
+                                  selected = clinical_types[9])
       })
 
       output$time_trend_substance1 <- renderUI({
@@ -1137,6 +1160,118 @@ tabPanel(
       
       #then we can plot the actual graph, with labels
       output$geography_plot <- renderPlotly({
+        
+        if ((input$Geography == 
+            "Outside Scotland"|
+             input$Geography == 
+             "Other/Not Known")
+          & input$Measure== 
+             "Rate"
+          )
+          
+        { 
+          
+          #This is the message we are using.
+          
+          text_state_hosp <- list(
+            x = 5, 
+            y = 2,
+            font = list(color = "#0072B2", size = 20),
+            text = 
+              "Rates are not available for locations outside Scotland or
+            unknown", 
+            xref = "x", 
+            yref = "y",  
+            showarrow = FALSE
+          ) 
+          
+          #Visualise an empty graph with the above message in the middle.
+          
+          plot_ly() %>% 
+            layout(annotations = text_state_hosp, 
+                   yaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE), 
+                   xaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE)) %>%  
+            config(displayModeBar = FALSE,
+                   displaylogo = F, collaborate = F, editable = F) 
+          
+        }
+        
+        #Now let's create alt message.
+
+        else if (input$Substances == 
+                  "All"
+                  & input$Measure== 
+                  "Percentage")
+        { 
+          
+          #This is the message we are using.
+          
+          text_state_hosp <- list(
+            x = 5, 
+            y = 2,
+            font = list(color = "#0072B2", size = 20),
+            text = 
+              "Percentages are not available for all drugs", 
+            xref = "x", 
+            yref = "y",  
+            showarrow = FALSE
+          ) 
+          
+          #Visualise an empty graph with the above message in the middle.
+          
+          plot_ly() %>% 
+            layout(annotations = text_state_hosp, 
+                   yaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE), 
+                   xaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE)) %>%  
+            config(displayModeBar = FALSE,
+                   displaylogo = F, collaborate = F, editable = F) 
+          
+        }
+        
+        
+        else if (is.data.frame(geography_new()) &&
+             nrow(geography_new()) == 0 )
+        { 
+          
+          #This is the message we are using.
+          
+          text_state_hosp <- list(
+            x = 5, 
+            y = 2,
+            font = list(color = "#0072B2", size = 20),
+            text = 
+              "Please make a selection from the drop down menus", 
+            xref = "x", 
+            yref = "y",  
+            showarrow = FALSE
+          ) 
+          
+          #Visualise an empty graph with the above message in the middle.
+          
+          plot_ly() %>% 
+            layout(annotations = text_state_hosp, 
+                   yaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE), 
+                   xaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE)) %>%  
+            config(displayModeBar = FALSE,
+                   displaylogo = F, collaborate = F, editable = F) 
+          
+        }
+        
+        
+
+        else {
         #first the tooltip label
         tooltip_geography <- paste0(
           "Financial year: ",
@@ -1212,7 +1347,8 @@ tabPanel(
                  #Wrap the x axis title in blank spaces so that it doesn't...
                  #overlap with the x axis tick labels.
                  
-                 xaxis = list(tickangle = -45,
+                 xaxis = list(range = c(-1,22),
+                              tickangle = -45,
                               title = paste0(c(rep("&nbsp;", 20),
                                                "<br>",
                                                "Financial year",
@@ -1247,7 +1383,7 @@ tabPanel(
                                                'hoverCompareCartesian',
                                                'hoverClosestCartesian'),
                  displaylogo = F, collaborate = F, editable = F)
-        
+        }
       })
       
       #Create new data table for geography
@@ -1335,7 +1471,7 @@ tabPanel(
         shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type2", 
                                   label = "Select hospital clinical type",
                                   choices = clinical_types, 
-                                  selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)")
+                                  selected = clinical_types[9])
       })
       
       output$time_trend_substance2 <- renderUI({
@@ -1440,7 +1576,8 @@ tabPanel(
             #Wrap the x axis title in blank spaces so that it doesn't...
             #overlap with the x axis tick labels.
             
-            xaxis = list(tickangle = -45,
+            xaxis = list(range = c(-1,22),
+                         tickangle = -45,
                          title = paste0(c(rep("&nbsp;", 20),
                                           "<br>",
                                           "Financial year",
@@ -1529,7 +1666,7 @@ tabPanel(
             inputId = "Hospital_Clinic_Type3",
             label = "Select hospital clinical type",
             choices = clinical_types,
-            selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)"
+            selected = clinical_types[9]
           )
         })
         
@@ -1698,7 +1835,7 @@ tabPanel(
               & age_group %in% input$Age
               & sex %in% input$Sex
             ) %>%
-            select(-c(measure,geography,geography_type))
+            select(-measure)
         })
         
         #Table
@@ -1971,7 +2108,7 @@ tabPanel(
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
             ) %>%
-            select(-c(measure,geography,geography_type)) %>%
+            select(-measure) %>%
             mutate(value = abs(value))
           
         })
@@ -2031,7 +2168,7 @@ tabPanel(
             inputId = "Hospital_Clinic_Type4",
             label = "Select hospital clinical type",
             choices = clinical_types,
-            selected = "Combined (General acute/Psychiatric) - Combined (Mental and Behavioural/Overdose)"
+            selected = clinical_types[9]
           )
         })
         
@@ -2193,7 +2330,7 @@ tabPanel(
               & measure %in% input$Measure4
               & year %in% input$Financial_Year2
             )%>%
-            select(-c(measure,geography_type))
+            select(-measure)
         })
         
         #Table
@@ -2206,7 +2343,6 @@ tabPanel(
               "Financial year",
               "Hospital clinical type",
               "Activity type",
-              "Location",
               "Drug type",
               "Deprivation index",
               input$Measure4
@@ -2310,9 +2446,9 @@ tabPanel(
                           "Age group" = age_group,
                           "Sex" = sex,
                           "Deprivation index" = simd,
-                          "Number < 1 week" = num_less_1week,
-                          "Percentage <1 week" = perc_less_1week,
                           "Total" = total, 
+                          "Percentage <1 week" = perc_less_1week,
+                          "Percentage >1 week" = perc_more_1week,
                           "Median length of stay" = med_los
                    ),
                  "Emergency admissions" = emergency_admissions %>% 
@@ -2324,9 +2460,10 @@ tabPanel(
                           "Age group" = age_group,
                           "Sex" = sex,
                           "Deprivation index" = simd,
-                          "Number emergency admissions" = num_adm_emer,
-                          "Percentage emergency admissions" = perc_adm_emer,
-                          "Total" = total
+                          "Total" = total,
+                          "Percentatge emergency admissions" = perc_adm_emer,
+                          "Percentage non-emergency admissions" = perc_adm_other
+                          
                      
                    ),
                  "Drug type by hospital" = drug_type_by_hospital %>% 
@@ -2334,9 +2471,6 @@ tabPanel(
                           "Hospital clinical type" = hos_clin_type,
                           "Activity type" = activity_type, 
                           "Drug type" = drug_type,
-                          "Number SMR01" = num_source01,
-                          "Number SMR04" = num_source04,
-                          "Number both" = num_sourceBOTH,
                           "Percentage SMR01" = perc_source01,
                           "Percentage SMR04" = perc_source04,
                           "Percentage both" = perc_sourceBOTH, 
