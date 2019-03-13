@@ -26,7 +26,7 @@ library(plotly)
 library(shinyWidgets)
 library(stringr)
 library(DT)
-
+library(RColorBrewer)
 ##############################################.
 ############## Reading In Data ----
 ##############################################.
@@ -42,6 +42,7 @@ all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY.rds"))
 
 all_data<-all_data%>% 
   mutate(value = round(value, 2))
+
 
 #Data that is not visualized  
 length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY.rds"))
@@ -72,7 +73,7 @@ deprivation <- all_data %>%
 #Drug Types are created as list to allow different options dependent on the 
 #Hospital admission types
 clinical_types <- as.character(unique(all_data$hos_clin_type))
-activity_measure <- as.character(unique(all_data$activity_type))
+activity_type <- as.character(unique(all_data$activity_type))
 location_types <- as.character(unique(all_data$geography_type))
 locations<- as.character(unique(all_data$geography))
 Scotland<-locations[1:3]
@@ -155,8 +156,6 @@ demographic_summary<-demographic_summary %>%
          age_group,sex,simd,
          value)
 
-
-
 #We can then drop unnecessary columns from these tables
 
 length_of_stay <- length_of_stay %>% 
@@ -175,11 +174,6 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
   mutate(perc_source01 = round(perc_source01, 2), 
          perc_source04 = round(perc_source04, 2), 
          perc_sourceBOTH = round(perc_sourceBOTH, 2))
-
-#Currently SIMD is read in as '1=' and '5=' which does not work in the table
-#workaround for now is to recode to '1-' and '5-' until changed in SPPS syntax
-
-  
 
 
 ##############################################.
@@ -399,10 +393,9 @@ tabsetPanel(
       column(
         4,
         shinyWidgets::pickerInput(
-          inputId = "Activity_Measure",
+          inputId = "Activity_Type",
           label = "Select activity type",
-          choices = activity_measure,
-          selected = "Stays"
+          choices = activity_type
         ),
         uiOutput("time_trend_locations")
         ),
@@ -538,9 +531,9 @@ tabsetPanel(
       column(
         4,
         shinyWidgets::pickerInput(
-          inputId = "Activity_Measure2",
+          inputId = "Activity_Type2",
           label = "Select activity type",
-          choices = activity_measure,
+          choices = activity_type,
           selected = "Stays"
         ), 
         uiOutput("time_trend_locations2")
@@ -666,9 +659,9 @@ tabPanel(
     column(
       6,
       shinyWidgets::pickerInput(
-        inputId = "Activity_Measure3",
+        inputId = "Activity_Type3",
         label = "Select activity type",
-        choices = activity_measure,
+        choices = activity_type,
         selected = "Stays"
       ),
       shinyWidgets::pickerInput(
@@ -910,9 +903,9 @@ tabPanel(
     column(
       4,
       shinyWidgets::pickerInput(
-        inputId = "Activity_Measure4",
+        inputId = "Activity_Type4",
         label = "Select activity type",
-        choices = activity_measure,
+        choices = activity_type,
         selected = "Stays"
       ), 
       shinyWidgets::pickerInput(
@@ -1127,7 +1120,7 @@ tabPanel(
       
       output$time_trend_clinical_type <- renderUI({
         shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type", 
-                                  label = "Select hospital clinical type",
+                                  label = "Select hospital - clinical type",
                                   choices = clinical_types, 
                                   selected = clinical_types[9])
       })
@@ -1151,7 +1144,7 @@ tabPanel(
         time_trend %>%
           filter(
             hos_clin_type %in% input$Hospital_Clinic_Type
-            & activity_type %in% input$Activity_Measure
+            & activity_type %in% input$Activity_Type
             & geography %in% input$Geography
             & drug_type %in% input$Substances
             & measure %in% input$Measure 
@@ -1237,8 +1230,9 @@ tabPanel(
         }
         
         
-        else if (is.data.frame(geography_new()) &&
-             nrow(geography_new()) == 0 )
+        else if (is.null(input$Geography_type)|
+                 is.null(input$Geography)
+                 )
         { 
           
           #This is the message we are using.
@@ -1295,7 +1289,18 @@ tabPanel(
           x = ~  year,
           y = ~  value,
           color = ~  geography,
-            
+          colors = 
+            #Colors are assigned alphabetically in order of ADP, then 
+            #health board, then Scotland (and alphabetically within)
+            { print(c(
+            brewer.pal(12, "Paired"),
+            brewer.pal(9, "Set1"),
+            brewer.pal(12, "Set3"),
+            brewer.pal(8,"Accent"),
+            brewer.pal(4,"Dark2")[1:4],
+            "#0072B2",
+            brewer.pal(2,"Dark2")[5:6]
+          )) },  
           #tooltip
           text = tooltip_geography,
           hoverinfo = "text",
@@ -1306,16 +1311,16 @@ tabPanel(
           width = 1000,
           height = 600
         ) %>%
-          
+   
           #add in title to chart
           
           
           layout(
             #Title
           title =
-                   paste0( input$Hospital_Clinic_Type,  " "  ,
-                            str_sub(input$Activity_Measure,1,-2) , " ",input$Measure,
-                           " by location"),
+                   paste0( "<b>",input$Hospital_Clinic_Type,  " "  ,
+                            str_sub(input$Activity_Type,1,-2) , " ",input$Measure,
+                           " By Location","<b>"),
                  separators = ".",
           
           #y=axis formatting       
@@ -1391,7 +1396,7 @@ tabPanel(
       geography_new_table<-reactive({time_trend %>%
           filter(
             hos_clin_type %in% input$Hospital_Clinic_Type
-            & activity_type %in% input$Activity_Measure
+            & activity_type %in% input$Activity_Type
             & geography %in% input$Geography
             & drug_type %in% input$Substances
             & measure %in% input$Measure
@@ -1412,6 +1417,8 @@ tabPanel(
                                "Drug type",
                                input$Measure),
                   rownames = FALSE,
+                  options = list(searching= FALSE,
+                                 lengthChange= FALSE),
                   style = "Bootstrap"
         )
       })
@@ -1469,7 +1476,7 @@ tabPanel(
       
       output$time_trend_clinical_type2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type2", 
-                                  label = "Select hospital clinical type",
+                                  label = "Select hospital - clinical type",
                                   choices = clinical_types, 
                                   selected = clinical_types[9])
       })
@@ -1493,7 +1500,7 @@ tabPanel(
         time_trend %>%
           filter(
             hos_clin_type %in% input$Hospital_Clinic_Type2
-            & activity_type %in% input$Activity_Measure2
+            & activity_type %in% input$Activity_Type2
             & geography %in% input$Geography2
             & drug_type %in% input$Substances2
             & measure %in% input$Measure2
@@ -1502,6 +1509,122 @@ tabPanel(
       
       #then we can plot the actual graph, with labels
       output$substances_plot <- renderPlotly({
+        
+        if ((input$Geography2 == 
+             "Outside Scotland"|
+             input$Geography2 == 
+             "Other/Not Known")
+            & input$Measure2 == 
+            "Rate"
+        )
+          
+        { 
+          
+          #This is the message we are using.
+          
+          text_state_hosp <- list(
+            x = 5, 
+            y = 2,
+            font = list(color = "#0072B2", size = 20),
+            text = 
+              "Rates are not available for locations outside Scotland or
+            unknown", 
+            xref = "x", 
+            yref = "y",  
+            showarrow = FALSE
+          ) 
+          
+          #Visualise an empty graph with the above message in the middle.
+          
+          plot_ly() %>% 
+            layout(annotations = text_state_hosp, 
+                   yaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE), 
+                   xaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE)) %>%  
+            config(displayModeBar = FALSE,
+                   displaylogo = F, collaborate = F, editable = F) 
+          
+        }
+        
+        #Now let's create alt message.
+        
+        else if (input$Substances2 == 
+                 "All"
+                 & length(input$Substances2) ==1
+                 & input$Measure2 == 
+                 "Percentage")
+        { 
+          
+          #This is the message we are using.
+          
+          text_state_hosp <- list(
+            x = 5, 
+            y = 2,
+            font = list(color = "#0072B2", size = 20),
+            text = 
+              "Percentages are not available for all drugs", 
+            xref = "x", 
+            yref = "y",  
+            showarrow = FALSE
+          ) 
+          
+          #Visualise an empty graph with the above message in the middle.
+          
+          plot_ly() %>% 
+            layout(annotations = text_state_hosp, 
+                   yaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE), 
+                   xaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE)) %>%  
+            config(displayModeBar = FALSE,
+                   displaylogo = F, collaborate = F, editable = F) 
+          
+        }
+        
+        
+        else if (is.null(input$Substances2))
+        
+        { 
+          
+          #This is the message we are using.
+          
+          text_state_hosp <- list(
+            x = 5, 
+            y = 2,
+            font = list(color = "#0072B2", size = 20),
+            text = 
+              "Please make a selection from the drop down menus", 
+            xref = "x", 
+            yref = "y",  
+            showarrow = FALSE
+          ) 
+          
+          #Visualise an empty graph with the above message in the middle.
+          
+          plot_ly() %>% 
+            layout(annotations = text_state_hosp, 
+                   yaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE), 
+                   xaxis = list(showline = FALSE, 
+                                showticklabels = FALSE, 
+                                showgrid = FALSE)) %>%  
+            config(displayModeBar = FALSE,
+                   displaylogo = F, collaborate = F, editable = F) 
+          
+        }
+        
+        
+        
+        else {
+        
+        
+        
         #first the tooltip label
                 tooltip_substances <- paste0(
                   "Financial year: ",
@@ -1525,6 +1648,11 @@ tabPanel(
           x = ~  year,
           y = ~  value,
           color = ~  drug_type,
+          colors = 
+            #Colors are assigned alphabetically -All is assigned dark blue
+          { print(c("#0072B2",
+            brewer.pal(10, "Paired")[c(1,3:10)]
+          )) },
           #tooltip
                     text = tooltip_substances,
                     hoverinfo = "text",
@@ -1542,9 +1670,9 @@ tabPanel(
           layout(
             #Title
             title =
-              paste0( input$Hospital_Clinic_Type2,  " "  ,
-                      str_sub(input$Activity_Measure2,1,-2), " ",input$Measure2,
-                      " by drug type"),
+              paste0("<b>", input$Hospital_Clinic_Type2,  " "  ,
+                      str_sub(input$Activity_Type2,1,-2), " ",input$Measure2,
+                      " By Drug Type","<b>"),
             separators = ".",
             
             #y=axis formatting       
@@ -1612,13 +1740,14 @@ tabPanel(
                                                'hoverCompareCartesian',
                                                'hoverClosestCartesian'),
                  displaylogo = F, collaborate = F, editable = F)
-        
+        }  
       })
+      
       
       substances_new_table<-reactive({time_trend %>%
           filter(
             hos_clin_type %in% input$Hospital_Clinic_Type2
-            & activity_type %in% input$Activity_Measure2
+            & activity_type %in% input$Activity_Type2
             & geography %in% input$Geography2
             & drug_type %in% input$Substances2
             & measure %in% input$Measure2
@@ -1636,6 +1765,8 @@ tabPanel(
                                "Location",
                                "Drug type",
                                input$Measure2),
+                  options = list(searching= FALSE,
+                                 lengthChange= FALSE),
                   rownames = FALSE,
                   style = "Bootstrap")
       })
@@ -1664,7 +1795,7 @@ tabPanel(
         output$age_sex_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Hospital_Clinic_Type3",
-            label = "Select hospital clinical type",
+            label = "Select hospital - clinical type",
             choices = clinical_types,
             selected = clinical_types[9]
           )
@@ -1694,7 +1825,7 @@ tabPanel(
           age_sex %>%
             filter(
               hos_clin_type %in% input$Hospital_Clinic_Type3
-              & activity_type %in% input$Activity_Measure3
+              & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
               #and the age/sex options
@@ -1706,6 +1837,80 @@ tabPanel(
         
         #Create the main body of the chart.
         output$age_sex_time_plot <- renderPlotly({
+          
+          
+          if (input$Substances3 == 
+             "All"
+             & input$Measure3 == 
+             "Percentage")
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Percentages are not available for all drugs", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, collaborate = F, editable = F) 
+            
+          }
+          
+          #Now let's create alt message.
+
+          else if (is.null(input$Age)|
+            is.null(input$Sex))
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Please make a selection from the drop down menus", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, collaborate = F, editable = F) 
+            
+          }
+          
+          else {
+          
           #Add in a tooltip
           tooltip_age_sex_time <- paste0(
             "Financial year: ",
@@ -1728,6 +1933,11 @@ tabPanel(
             x = ~  year,
             y = ~  value,
             color = ~  age_group,
+            colors = #Colors are assigned alphabetically -All is assigned dark blue
+            { print(c(
+                      brewer.pal(8, "Paired")[c(1,3:8)],
+                      "#0072B2"
+            )) },
             #so we can try different symbols as well as different linetypes to
             #distinguish between sex.
             linetype = ~ sex,
@@ -1745,9 +1955,10 @@ tabPanel(
             #Make the graph title reactive.
             
             layout(title = 
-                     paste0(input$Hospital_Clinic_Type3,  " "  ,
-                            str_sub(input$Activity_Measure3,1,-2) , " ",input$Measure3,
-                            " by ", input$Substances3),
+                     paste0("<b>",input$Hospital_Clinic_Type3,  " "  ,
+                            str_sub(input$Activity_Type3,1,-2) , " ",input$Measure3,
+                            " for ", input$Substances3,
+                            " Drug Types By Age And Sex","<b>"),
                    
                    separators = ".",
                    
@@ -1782,7 +1993,8 @@ tabPanel(
                    #Wrap the x axis title in blank spaces so that it doesn't...
                    #overlap with the x axis tick labels.
                    
-                   xaxis = list(tickangle = -45, 
+                   xaxis = list(range = c(-1,22),
+                     tickangle = -45, 
                                 title = paste0(c(rep("&nbsp;", 20),
                                                  "<br>", 
                                                  "Financial year",
@@ -1820,7 +2032,7 @@ tabPanel(
                                                  'hoverCompareCartesian', 
                                                  'hoverClosestCartesian'), 
                    displaylogo = F, collaborate = F, editable = F)
-          
+          }
         })
         
    
@@ -1829,7 +2041,7 @@ tabPanel(
           age_sex %>%
             filter(
               hos_clin_type %in% input$Hospital_Clinic_Type3
-              & activity_type %in% input$Activity_Measure3
+              & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
               & age_group %in% input$Age
@@ -1852,7 +2064,9 @@ tabPanel(
               "Age",
               "Sex",
               input$Measure3
-            )
+            ),
+            options = list(searching= FALSE,
+                           lengthChange= FALSE)
           )
         })
         
@@ -1891,7 +2105,7 @@ tabPanel(
             filter(
               year %in% input$Financial_Year
               & hos_clin_type %in% input$Hospital_Clinic_Type3
-              & activity_type %in% input$Activity_Measure3
+              & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
             ) %>%
@@ -1901,7 +2115,7 @@ tabPanel(
         age_sex_year_new_axis <- reactive({
           age_sex_tornado %>%
             filter(hos_clin_type %in% input$Hospital_Clinic_Type3
-              & activity_type %in% input$Activity_Measure3
+              & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
             ) %>%
@@ -1911,6 +2125,81 @@ tabPanel(
         
         #then plot it
         output$age_sex_year_plot <- renderPlotly({
+          
+          
+          if (input$Substances3 == 
+              "All"
+              & input$Measure3 == 
+              "Percentage")
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Percentages are not available for all drugs", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, collaborate = F, editable = F) 
+            
+          }
+          
+          #Now let's create alt message.
+          
+          else if (input$Financial_Year %in% financial_years[1:10]
+                   & input$Activity_Type3 == "New patients")
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Data is not available for new patients before 
+              2006/07", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, collaborate = F, editable = F) 
+            
+          }
+          
+          else {
+
           #add in tooltip
           tooltip_age_sex_year <- paste0(
             "Financial year: ",
@@ -1954,13 +2243,14 @@ tabPanel(
             layout(
               title = paste0(
                 "<b>",
-                input$Activity_Measure3,
+                input$Activity_Type3,
                 " in financial year ",
                 input$Financial_Year,
                 ",",
                 "<br>",
-                "by age group and sex, by ",
+                "For ",
                 input$Substances3,
+                " Drug Types By Age Group And Sex",
                 "</b>"
               ),
               
@@ -2094,7 +2384,7 @@ tabPanel(
               collaborate = F,
               editable = F
             )
-          
+          }
         })
         
         #we can now add in the table for the bar chart- values
@@ -2104,7 +2394,7 @@ tabPanel(
             filter(
               year %in% input$Financial_Year
               & hos_clin_type %in% input$Hospital_Clinic_Type3
-              & activity_type %in% input$Activity_Measure3
+              & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
             ) %>%
@@ -2127,7 +2417,9 @@ tabPanel(
               "Age",
               "Sex",
               input$Measure3
-            )
+            ),
+            options = list(searching= FALSE,
+                           lengthChange= FALSE)
           )
         })
         
@@ -2166,7 +2458,7 @@ tabPanel(
         output$SIMD_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Hospital_Clinic_Type4",
-            label = "Select hospital clinical type",
+            label = "Select hospital - clinical type",
             choices = clinical_types,
             selected = clinical_types[9]
           )
@@ -2190,7 +2482,7 @@ tabPanel(
           deprivation %>%
             filter(
               hos_clin_type %in% input$Hospital_Clinic_Type4
-              & activity_type %in% input$Activity_Measure4
+              & activity_type %in% input$Activity_Type4
               & drug_type %in% input$Substances4
               & measure %in% input$Measure4
               #and the year options
@@ -2235,9 +2527,9 @@ tabPanel(
             #Make the graph title reactive.
             
             layout(title = 
-                     paste0(input$Hospital_Clinic_Type4,  " "  ,
-                            str_sub(input$Activity_Measure4,1,-2), " ",input$Measure4,
-                            " by ", input$Substances4),
+                     paste0("<b>",input$Hospital_Clinic_Type4,  " "  ,
+                            str_sub(input$Activity_Type4,1,-2), " ",input$Measure4,
+                            " By ", input$Substances4,"<b>"),
                    
                    separators = ".",
                    
@@ -2325,7 +2617,7 @@ tabPanel(
           deprivation %>%
             filter(
               hos_clin_type %in% input$Hospital_Clinic_Type4
-              & activity_type %in% input$Activity_Measure4
+              & activity_type %in% input$Activity_Type4
               & drug_type %in% input$Substances4
               & measure %in% input$Measure4
               & year %in% input$Financial_Year2
@@ -2346,7 +2638,9 @@ tabPanel(
               "Drug type",
               "Deprivation index",
               input$Measure4
-            )
+            ),
+            options = list(searching= FALSE,
+                           lengthChange= FALSE)
           )
         })
         
@@ -2446,7 +2740,7 @@ tabPanel(
                           "Age group" = age_group,
                           "Sex" = sex,
                           "Deprivation index" = simd,
-                          "Total" = total, 
+                          "Number of stays" = total, 
                           "Percentage <1 week" = perc_less_1week,
                           "Percentage >1 week" = perc_more_1week,
                           "Median length of stay" = med_los
@@ -2460,7 +2754,7 @@ tabPanel(
                           "Age group" = age_group,
                           "Sex" = sex,
                           "Deprivation index" = simd,
-                          "Total" = total,
+                          "Number of stays" = total,
                           "Percentatge emergency admissions" = perc_adm_emer,
                           "Percentage non-emergency admissions" = perc_adm_other
                           
@@ -2474,7 +2768,7 @@ tabPanel(
                           "Percentage SMR01" = perc_source01,
                           "Percentage SMR04" = perc_source04,
                           "Percentage both" = perc_sourceBOTH, 
-                          "Total" = total
+                          "Number" = total
                    )
                  
                  
@@ -2526,3 +2820,6 @@ tabPanel(
 }
 
 shinyApp(ui = ui, server = server)
+
+
+
