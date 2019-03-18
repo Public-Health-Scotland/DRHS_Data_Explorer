@@ -43,6 +43,13 @@ all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY.rds"))
 all_data<-all_data%>% 
   mutate(value = round(value, 2))
 
+#The following code would be used if we want to round all values to 5. 
+# all_data<-all_data %>%
+#   mutate(value = 
+#   if_else(measure=="Number",
+#    round(value/5)*5, value)
+#   )
+
 
 #Data that is not visualized  
 length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY.rds"))
