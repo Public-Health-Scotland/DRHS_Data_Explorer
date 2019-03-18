@@ -2494,6 +2494,44 @@ tabPanel(
         
         #Create the main body of the chart.
         output$SIMD_plot <- renderPlotly({
+          
+          
+          if (input$Financial_Year2 %in% financial_years[1:10]
+              & input$Activity_Type4 == "New patients")
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Data is not available for new patients before 
+              2006/07", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, collaborate = F, editable = F) 
+            
+          }
+          
+          else {
+          
           #Add in a tooltip
           tooltip_SIMD <- paste0(
             "Financial year: ",
@@ -2604,7 +2642,7 @@ tabPanel(
                                                  'hoverCompareCartesian', 
                                                  'hoverClosestCartesian'), 
                    displaylogo = F, collaborate = F, editable = F)
-          
+          }
         })
         
         
