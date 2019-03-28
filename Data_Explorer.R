@@ -65,6 +65,17 @@ all_data<-all_data%>%
 #We will manually change the names of factors in R until we have an agreed 
 #terminology for the hospital-clinical type. 
 
+all_data<-all_data %>% 
+  mutate(hos_clin_type= fct_recode(hos_clin_type, 
+                                   "General Acute and Psychiatric - Combined" = "Combined (SMR01/04) - Combined (Mental & Behavioural/Overdose)",  
+                                   "General Acute and Psychiatric - Mental & Behavioural" = "Combined (SMR01/04) - Mental & Behavioural",                      
+                                   "General Acute and Psychiatric - Overdose" = "Combined (SMR01/04) - Overdose" ,                                  
+                                   "General acute - Combined" =  "General acute (SMR01) - Combined (Mental & Behavioural/Overdose)",
+                                   "General acute - Mental & Behavioural" = "General acute (SMR01) - Mental & Behavioural",                    
+                                   "General acute - Overdose" =  "General acute (SMR01) - Overdose" ,                               
+                                   "Psychiatric - Combined" = "Psychiatric (SMR04) - Combined (Mental & Behavioural/Overdose)" ,  
+                                   "Psychiatric - Mental & Behavioural" = "Psychiatric (SMR04) - Mental & Behavioural" ,                      
+                                   "Psychiatric - Overdose" =  "Psychiatric (SMR04) - Overdose" ))
 
 
 
