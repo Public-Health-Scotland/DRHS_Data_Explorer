@@ -160,7 +160,7 @@ demographic_summary<- all_data  %>%
          measure == "Rate") 
 
 
-#Kepp only those columns that are necessary
+#Keep only those columns that are necessary
 activity_summary<-activity_summary %>% 
   select(year,hos_clin_type,activity_type,
          geography_type,geography,value)
@@ -248,8 +248,8 @@ tabsetPanel(
       8,
       p(
         br(),
-        "The explorer allows you to visualise DRHS data
-        in a variety of ways."
+        "The data explorer allows you to visualise drug realted hospital stay
+        (DRHS) data in a variety of ways."
       ),
       tags$ul(
         tags$li(
@@ -257,8 +257,7 @@ tabsetPanel(
             "link_to_geography", "Time trend (location comparison)"
           )),
           icon("line-chart"),
-          " - shows data on specific DRHS activity over time, allowing comparisons
-          by location."
+          " - shows DRHS activity over time, allowing comparisons by location."
       ),
       
         tags$li(
@@ -266,30 +265,29 @@ tabsetPanel(
             "link_to_substances", "Time trend (drug type comparison)"
           )),
           icon("line-chart"),
-          " - shows data on specific DRHS activity over time, allowing comparisons
-          by substances."
+          " - shows DRHS activity over time, allowing comparisons by drug type."
         ),
       tags$li(
         tags$b(actionLink(
           "link_to_age_sex", "Age/sex"
         )),
         icon("child"),
-        " - shows data on specific DRHS activity by age and sex."
+        " - shows DRHS activity by age group and sex.."
       ),
       tags$li(
         tags$b(actionLink(
           "link_to_deprivation", "Deprivation"
         )),
         icon("bar-chart"),
-        " - shows data on specific DRHS activity by deprivation."
+        " - shows DRHS activity by deprivation group."
       ),
       tags$li(
         tags$b(actionLink(
           "link_to_table", "Table"
         )),
         icon("table"),
-        " - data tables that underlie graphs, as well as data from the data
-        trends page as well as additional tables not visualised."
+        " - data tables related to content of the Data Explorer and Data Trends
+        pages, plus additional tables not visualised."
       )
       ),
       
@@ -299,37 +297,35 @@ tabsetPanel(
       ),
       tags$ul( 
         tags$li(
-          "The explorer visualises information recorded in the Scottish 
-          Morbidity Records 01 and 04 (SMR01 and SMR04) dataset. The SMR01 dataset deals 
-          with general acute inpatient acivity and SMR04 deals with psychiatric inpatient 
-          acitivity"
+          "The data explorer visualises information recorded in the SMR01 and SMR04
+          datasets. The SMR01 dataset records general acute hospital inpatient and day
+          case activity and SMR04 records psychiatric hospital inpatient and day case 
+          activity."
         ),
         tags$li(
-          "SMR data completeness varies from year to year. As a result,
-          data is provisional and subject to change. For more 
-          information, visit the ", 
+          "Data completeness may vary slightly from year to year. As a result,
+          data are provisional and subject to change. For more information, visit 
+          the SMR Completeness webpage. ", 
           tags$a(
             href = "http://www.isdscotland.org/products-and-Services/Data-Support-and-Monitoring/SMR-Completeness/", 
             "SMR Completeness"
           ),
-          " webpage, which contains an Excel file with completeness
-          estimates for all SMR datasets."
+          " webpage."
         ), 
         
         tags$li(
-          "Diagnosis of drug-misuse is recorded on SMR using the International 
-          Statistical Classification of Diseases and Related Health Problems, 
-          10th Edition (ICD-10). For list of ICD-10 diagnostic codes used to 
-          classify drug-misuse please consult the glossary. Note that patients may 
-          have more than one drug diagnosis per stay." 
+          "Diagnostic information is recorded using the International Statistical
+          Classification of Diseases and Related Health Problems, 10th Edition
+          (ICD-10). ICD-10 codes used to classify drug-related hospital stays 
+          are listed in the Glossary. Note that patients may have more than one
+          drug-related diagnosis per stay." 
           
         ),
         tags$li(
-          "Statistical disclosure control has been applied to protect 
-          patient confidentiality. Therefore, the figures presented in 
-          this explorer may not be additive and may differ to previous 
-          sources of information. For more information, please refer to 
-          the ",
+          "Statistical disclosure control has been applied to protect patient
+          confidentiality. Therefore, the figures presented in this dashboard may 
+          not be additive and may differ to previous sources of information.  
+          For more information, please refer to the  ",
           tags$a(
             href = "http://www.isdscotland.org/About-ISD/Confidentiality/disclosure_protocol_v3.pdf", 
             "NSS Statistical Disclosure Control Protocol."
@@ -341,25 +337,23 @@ tabsetPanel(
       ),
       
       p(
-        "To help you understand the information visualised in the 
-        explorer, we have created a glossary of commonly used terms in
-        drug related hospital stay activity. 
+        "To help users understand the information visualised in the Data Explorer,
+        we have created a glossary of commonly used terms. 
         Click the button below to download the glossary:"
       ),
       
-      #Commented out until we have link to gloassary
       
-      # downloadButton(outputId = "download_glossary_one", 
-      #                label = "Download glossary", 
-      #                class = "glossaryone"),
-      # tags$head(
-      #   tags$style(".glossaryone { background-color: #0072B2; } 
-      #              .glossaryone { color: #FFFFFF; }")
-      #   ),
+       downloadButton(outputId = "download_glossary_one", 
+                      label = "Download glossary", 
+                      class = "glossaryone"),
+       tags$head(
+         tags$style(".glossaryone { background-color: #0072B2; } 
+                    .glossaryone { color: #FFFFFF; }")
+         ),
       
       p(
         br(),
-        "If you have any trouble using the explorer or have further
+        "If you experience any problems using this dashboard or have further
         questions relating to the data, please contact us at:",
         tags$b(
           tags$a(href = "mailto:NSS.isdsubstancemisuse@nhs.net",
@@ -387,13 +381,21 @@ tabsetPanel(
     h3("Time trend (location comparison)"),
     p(
       HTML(
-        "This section allows you to visualise changes in drug related hospital stays 
-        over time. The period covered is financial years 1996/97 - 2017/18. Data for
-        ADPs is only available from 1997/98 and for new patients is only available
-        from 2006/07. Use the filters to visualise the data you are interested in. 
-        You can visualise multiple locations at the same time to allow comparisons 
-        between Scotland, Health Boards and Alcohol and Drug Partnerships (ADPs).  
-        For overdoses there are additional sub categories for Opioids. To view 
+        "This section allows users to visualise changes in drug related hospital
+         activity over time and to make comparisons between different locations. 
+         Information is available for financial years 1996/97 to 2017/18."),
+        br(),
+      br(),
+      HTML("Use the filters to visualise the data you are interested in.
+          You can visualise multiple locations at the same time to allow 
+          comparisons between Scotland, NHS Boards and Alcohol and Drug 
+          Partnerships (ADPs). Individual trend lines can be hidden by clicking 
+          on the labels shown in the chart legend. Opioid sub categories are 
+          available if overdoses are selected as Clinical type. ADP information 
+          is available from 1997/98 and new patient trends are available from 2006/07."),
+      br(),
+      br(),
+      HTML("To view 
         your data selection in a table, use the <a href = '#geography_link'> 
        'Show/hide table' </a>  button at the
         bottom of the page. To download your data selection as a CSV file, use the
@@ -532,19 +534,27 @@ tabsetPanel(
     h3("Time trend (drug type comparison)"),
     p(
       HTML(
-        "This section allows you to visualise changes in drug related hospital stays 
-        over time. The period covered is financial years 1996/97 - 2017/18. Data for
-        ADPs is only available from 1997/98 and for new patients is only available
-        from 2006/07. Use the filters to visualise the data you are interested in. 
-        You can visualise multiple drug types at the same time to allow comparisons
-        between drug types at the level of Scotland, Health Boards and 
-        Alcohol and Drug Partnerships (ADPs). For overdoses there are additional 
-        sub categories for Opioids. To view your data selection in a table,
-        use the <a href = '#substances_link'> 'Show/hide table' </a>  button at the
-        bottom of the page. To download your data selection as a CSV file, use the
-        'Download data' button under the filters. At the top-right corner of the 
-        graph, you will see a toolbar with four buttons:"
-      )
+        "This section allows users to visualise changes in drug related hospital
+        activity over time and to make comparisons between different drug types.
+        Information is available for financial years 1996/97 to 2017/18. "
+      ),
+      br(),
+      br(),
+      HTML("Use the filters to visualise the data you are interested in. You can
+           visualise multiple drug types at the same time to allow comparisons
+           between drug types within a single location (Scotland, 
+           an NHS Board or an Alcohol and Drug Partnership (ADP)). Individual 
+           trend lines can be hidden by clicking on the labels shown in 
+           the chart legend. Opioid sub categories are available if overdoses 
+           are selected as Clinical type. ADP information is available from 
+           1997/98 and new patient trends are available from 2006/07."),
+      br(),
+      br(),
+      HTML("To view your data selection in a table,
+           use the <a href = '#substances_link'> 'Show/hide table' </a>  button at the
+           bottom of the page. To download your data selection as a CSV file, use the
+           'Download data' button under the filters. At the top-right corner of the 
+           graph, you will see a toolbar with four buttons:")
       ),
     
     tags$ul(
@@ -685,26 +695,36 @@ tabPanel(
   border: 0px solid #FFFFFF;",
   h3("Age/sex"),
   
-  p(HTML("This section allows you to visualise age and sex distribution in drug 
-          related hospital stays. All data is at Scotland level.  Data for new patients
-          is only available from 2006/07. Using the toggle buttons the data can be 
-          visualised as either - ")),
+  p(
+    HTML("This section allows users to visualise drug-related hospital 
+         activity on the basis of the age and sex of patients. Information 
+         is available for Scotland level and for financial years 1996/97 to 2017/18."),
+    br(),
+    br(),
+    HTML("Use the filters to visualise the data you are interested in. 
+         Opioid sub categories are available if overdoses are selected as 
+         clinical type. New patient trends are available from 2006/07. The toggle
+         buttons allow the data to be visualised in two ways:")
+    
+    ),
 
   tags$ul(
     tags$li(
       tags$b("Line chart"),
       icon("line-chart"),
-      " - shows you the data over time. Choose from the drop down menus to select
-      sex or age"
+      " - displays drug-related hospital patient trends for specific age and 
+      sex groups over time. Select sex or age groups from the drop down menus.
+      Multiple groups can be shown on the chart simultaneously. Individual trend 
+      lines can be hidden by clicking on the labels shown in the chart legend."
     ),
     tags$li(
       tags$b("Bar Chart "),
       icon("bar-chart"),
-      " - shows all age and sex data over one year. Use the slider to control which
-      year to look at, or use the play button to see changes over time"
+      " - shows annual breakdowns of drug-related hospital patients by age and sex.
+      Use the slider to control which year to look at, or use the play button to 
+      see changes over time."
     )),
-p(HTML("Use the filters to visualise the data you are 
-         interested in. To view your data selection in a table, use the 
+p(HTML("To view your data selection in a table, use the 
          <a href = '#age_and_sex_link'> 'Show/hide table' </a> button at 
          the bottom of the page. To download your data selection as a CSV 
          file, use the 'Download data' button under the filters. At the 
@@ -811,11 +831,7 @@ p(HTML("Use the filters to visualise the data you are
           multiple = TRUE,
           selected = "All"
         ),
-        downloadButton(
-          outputId = "download_age_sex_trend",
-          label = "Download data",
-          class = "myagesextrendbutton"
-        ),
+
         tags$head(
           tags$style(
             ".myagesextrendbutton { background-color:
@@ -835,6 +851,15 @@ p(HTML("Use the filters to visualise the data you are
           selected = "All"
         )
       ),
+      column (4,
+              br(),
+              
+              downloadButton(
+                outputId = "download_age_sex_trend",
+                label = "Download data",
+                class = "myagesextrendbutton"
+              )
+              ),
       
       br(),
       br(),
@@ -875,7 +900,12 @@ p(HTML("Use the filters to visualise the data you are
           grid = T,
           animate = T,
           width = "1090px"
+        )
         ),
+      column(1),
+      column(3,
+             br(),
+             br(),
         downloadButton(
           outputId = "download_age_sex_year",
           label = "Download data",
@@ -888,9 +918,15 @@ p(HTML("Use the filters to visualise the data you are
                 .myagesexyearbutton { color: #FFFFFF; }"
           )
         )
-      ),
-      mainPanel(
-        width = 12,
+      )
+      ,
+      br(),
+      br(),
+      br(),
+      br(),
+      br(),
+      br(),
+   
         plotlyOutput("age_sex_year_plot",
                      width = "1090px",
                      height = "600px"),
@@ -900,12 +936,13 @@ p(HTML("Use the filters to visualise the data you are
               <strong>Show/hide table</strong></button>"
         ),
         HTML("<div id = 'ageandsexyear' class = 'collapse'>"),
+      br(),
         dataTableOutput("age_sex_year_table"),
         HTML("</div>"),
         br(),
         br()
-      )
     )
+    
     )
     )
   
@@ -924,18 +961,22 @@ tabPanel(
   h3("Deprivation"),
   p(
     HTML(
-      "This section allows you to visualise deprivation distribution in drug 
-          related hospital stays. All data is at Scotland level.  Data for new patients
-          is only available from 2006/07. Use the filters to visualise the data you
-          are interested in. For overdoses there are additional 
-      sub categories for Opioids. To view your data selection in a table,
+      "This section allows users to visualise drug-related hospital activity 
+      on the basis of the deprivation group of patients. Information is available 
+      for Scotland level and for financial years 1996/97 to 2017/18. "
+    ),
+    br(),
+    br(),
+    HTML("Use the filters to visualise the data you are interested in. Opioid sub
+         categories are available if overdoses are selected as Clinical type. New 
+         patient trends are available from 2006/07."),
+    br(),
+    br(),
+    HTML("To view your data selection in a table,
       use the <a href = '#SIMD_link'> 'Show/hide table' </a>  button at the
       bottom of the page. To download your data selection as a CSV file, use the
       'Download data' button under the filters. At the top-right corner of the 
-      graph, you will see a toolbar with four buttons:"
-      
-      
-    )
+      graph, you will see a toolbar with four buttons:")
     ),
   
   tags$ul(
@@ -1078,19 +1119,19 @@ tabPanel(
   
   p(
     HTML(
-      "This section allows you to view the data in table format. Use the  
-    filter below to visualise the dataset you are interested in. The list 
-    includes datasets used in the 'Data trends' page as well as the data presented here.
-    It also includes data that is not visualised in this dashboard that covers- ." ), 
-    tags$ul(
-      tags$li("Length of stay"),
-      tags$li("Emergency admissions"),
-      tags$li("Drug type by hospital")
-    ), 
-    "You can then use the 
-    filters situated below the column names of the table to modify the table
-    as you please. To download your data selection as a CSV file, use the 
-    'Download data' button."),
+      "This section allows users to view the data in table format. 
+       Use the filter below to access tabular information for the dataset you are
+       interested in. The list includes datasets used in both the 'Data trends' 
+       and ‘Data Explorer’ pages. The list also includes data not visualised in 
+       this dashboard (Length of stay, Emergency admissions and Drug type by hospital).
+      " ), 
+   br(),
+   br(),
+    HTML("You can then use the 
+    filters situated below the column names of the table to modify the data table. 
+    To download your data selection as a CSV file, use the 
+    'Download data' button.")
+    ),
   
   p(
     br(),
@@ -2111,7 +2152,7 @@ tabPanel(
                    xaxis = list(range = c(-1,22),
                      tickangle = -45, 
                                 title = paste0(c(rep("&nbsp;", 20),
-                                                 "<br>", 
+                                                 "<br>",
                                                  "Financial year",
                                                  rep("&nbsp;", 20),
                                                  rep("\n&nbsp;", 3)),
@@ -2123,7 +2164,7 @@ tabPanel(
                    #room to display nicely.
                    #Set the font sizes.
                    
-                   margin = list(l = 90, r = 60, b = 120, t = 90),
+                   margin = list(l = 90, r = 60, b = 150, t = 90),
                    font = list(size = 13),
                    titlefont = list(size = 15),
                    
@@ -2132,9 +2173,9 @@ tabPanel(
                    #Make the legend background and legend border white.              
                    
                    showlegend = TRUE,
-                   legend = list(orientation = 'h',
-                                 x = 0, 
-                                 y = -0.5,
+                   legend = list(orientation = 'v',
+                                 x = 100, 
+                                 y = 1,
                                  bgcolor = 'rgba(255, 255, 255, 0)', 
                                  bordercolor = 'rgba(255, 255, 255, 0)')) %>%
             
@@ -2352,7 +2393,7 @@ tabPanel(
             
             type = 'bar',
             width = 1000,
-            height = 400
+            height = 500
           ) %>%
             
             layout(
@@ -2371,6 +2412,7 @@ tabPanel(
               
               bargap = 0.2,
               barmode = "overlay",
+              
               yaxis = list(
                 title = paste0(c(
                   rep("&nbsp;", 20),
@@ -2454,6 +2496,8 @@ tabPanel(
                 ticks = "outside"
                 
               ),
+              
+              
               
               #Fix the margins so that the graph and axis titles have...
               #enough room to display nicely.
