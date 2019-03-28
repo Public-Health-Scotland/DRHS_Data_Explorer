@@ -27,6 +27,7 @@ library(shinyWidgets)
 library(stringr)
 library(DT)
 library(RColorBrewer)
+library(forcats)
 
 ##############################################.
 ############## Reading In Data ----
@@ -61,6 +62,10 @@ all_data<-all_data%>%
 #   & geography_type != "Scotland" ,
 #    round(value/3)*3, value)
 #   )
+#We will manually change the names of factors in R until we have an agreed 
+#terminology for the hospital-clinical type. 
+
+
 
 
 #Data that is not visualized  
@@ -98,6 +103,10 @@ locations<- as.character(unique(all_data$geography))
 Scotland<-locations[1:3]
 Health_Board<-locations[4:17]
 ADP<- locations[18:48]
+
+glasgow<-locations[10]
+str_wrap(glasgow,15)
+
 
 geography_list<-list("Scotland" = locations[1:3],
                      "NHS Board of residence" = locations[4:17],
@@ -1271,6 +1280,11 @@ tabPanel(
                                   label = "Select location (multiple selection)",  
                                   choices = geography_list[input$Geography_type],
                                   multiple = TRUE,
+                                 
+                                  options = list (`selected-text-format` = "count > 1", 
+                                                  `count-selected-text` = "{0} locations chosen (8 Max)",
+                                                  "max-options" = 8,
+                                                  "max-options-text" = "Only 8 options can be chosen"),
                                   selected = geography_list[input$Geography_type][[1]][1]
         )
       }) 
@@ -1456,14 +1470,18 @@ tabPanel(
             brewer.pal(8,"Accent"),
             brewer.pal(4,"Dark2")[1:4],
             "#0072B2","#1B9E77","#D95F02"
-          )) },  
+          )) },
+       
+          symbol = ~ geography_type,
+          symbols = ~c(22,23,26),
+          name = ~  str_wrap(geography,10),
           #tooltip
           text = tooltip_geography,
           hoverinfo = "text",
           #type
           type = 'scatter',
           mode = 'lines+markers',
-          marker = list(size = 8),
+          marker = list(size = 10),
           width = 1000,
           height = 600
         ) %>%
@@ -1518,22 +1536,23 @@ tabPanel(
                                            collapse = ""),
                               showline = TRUE,
                               ticks = "outside"),
-                 
+        
+                      
                  #        #Fix the margins so that the graph and axis titles have enough...
                  #       #room to display nicely.
                  #      #Set the font sizes.
                  #
-                 margin = list(l = 90, r = 60, b = 120, t = 90),
+                 margin = list(l = 90, r = 60, b = 150, t = 90),
                  font = list(size = 13),
                  titlefont = list(size = 15),
                  
                  #insert legend
                  showlegend = TRUE,
-                 legend = list(orientation = 'h',
-                               x = 0,
-                               y = -0.5,
+                 legend = list(
                                bgcolor = 'rgba(255, 255, 255, 0)',
-                               bordercolor = 'rgba(255, 255, 255, 0)')) %>%
+                               bordercolor = 'rgba(255, 255, 255, 0)')
+          ) %>%
+          
           
           #Remove unnecessary buttons from the modebar.
           
@@ -1645,6 +1664,8 @@ tabPanel(
                                   else
                                   drug_types2),
                                   multiple = TRUE, 
+                                  options = list (`selected-text-format` = "count > 1", 
+                                                  `count-selected-text` = "{0} drug types chosen"),
                                   selected = "All"
         )
       }) 
@@ -1809,6 +1830,7 @@ tabPanel(
           { print(c("#0072B2",
             brewer.pal(10, "Paired")[c(1,3:10)]
           )) },
+          name = ~ str_wrap(drug_type,10),
           #tooltip
                     text = tooltip_substances,
                     hoverinfo = "text",
@@ -1875,15 +1897,13 @@ tabPanel(
             #       #room to display nicely.
             #      #Set the font sizes.
             #
-            margin = list(l = 90, r = 60, b = 120, t = 90),
+            margin = list(l = 90, r = 60, b = 150, t = 90),
             font = list(size = 13),
             titlefont = list(size = 15),
             
             #insert legend
             showlegend = TRUE,
-            legend = list(orientation = 'h',
-                          x = 0,
-                          y = -0.5,
+            legend = list(
                           bgcolor = 'rgba(255, 255, 255, 0)',
                           bordercolor = 'rgba(255, 255, 255, 0)')) %>%
           
@@ -2173,10 +2193,7 @@ tabPanel(
                    #Make the legend background and legend border white.              
                    
                    showlegend = TRUE,
-                   legend = list(orientation = 'v',
-                                 x = 100, 
-                                 y = 1,
-                                 bgcolor = 'rgba(255, 255, 255, 0)', 
+                   legend = list(bgcolor = 'rgba(255, 255, 255, 0)', 
                                  bordercolor = 'rgba(255, 255, 255, 0)')) %>%
             
             #Remove unnecessary buttons from the modebar.
@@ -2518,8 +2535,6 @@ tabPanel(
               
               showlegend = TRUE,
               legend = list(
-                x = 1,
-                y = 1,
                 bgcolor = 'rgba(255, 255, 255, 0)',
                 bordercolor = 'rgba(255, 255, 255, 0)'
               )
