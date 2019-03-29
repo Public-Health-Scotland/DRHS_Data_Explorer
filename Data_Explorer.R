@@ -7,8 +7,6 @@
 #Output: Shiny application
 
 #This is the full version of the data explorer for the new DRHS dashboard. 
-#The individual tabs are first constructed from smaller apps and then finally added in 
-#to this one larger app
 
 #Currently there are tabs for 
 # Tab 1) A Home Page
@@ -114,9 +112,6 @@ locations<- as.character(unique(all_data$geography))
 Scotland<-locations[1:3]
 Health_Board<-locations[4:17]
 ADP<- locations[18:48]
-
-glasgow<-locations[10]
-str_wrap(glasgow,15)
 
 
 geography_list<-list("Scotland" = locations[1:3],
@@ -2463,58 +2458,60 @@ tabPanel(
                 round(max(
                   abs(age_sex_year_new_axis()$value)
                 )
-                * 110 / 100)),
+                * 110 / 100)
+                ),
                 tickangle = 0,
                 tickvals = c(
                   -round(max(abs(
                     age_sex_year_new_axis()$value
-                  ))),-round(max(abs(
+                  )),
+                  ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1)), 
+                  
+                  -round(max(abs(
                     age_sex_year_new_axis()$value
-                  ))
-                  * 66 / 100),-round(max(abs(
-                    age_sex_year_new_axis()$value
-                  ))
-                  * 33 / 100),
+                  )),
+                  ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))/2
+                  ,
+                  
                   0,
                   round(max(abs(
                     age_sex_year_new_axis()$value
-                  ))
-                  * 33 / 100),
+                  )),
+                  ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))/2,
+                  
                   round(max(abs(
                     age_sex_year_new_axis()$value
-                  ))
-                  * 66 / 100),
-                  round(max(abs(
-                    age_sex_year_new_axis()$value
-                  )))
+                  )),
+                  ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))
                 ),
                 ticktext = paste0(as.character(
                   c(
                     round(max(abs(
                       age_sex_year_new_axis()$value
-                    ))),
+                    )),
+                    ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1)),
+                    
                     round(max(abs(
                       age_sex_year_new_axis()$value
-                    ))
-                    * 66 / 100),
-                    round(max(abs(
-                      age_sex_year_new_axis()$value
-                    ))
-                    * 33 / 100),
+                    )),
+                    ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))/2,
+                    
                     0,
+                    
                     round(max(abs(
                       age_sex_year_new_axis()$value
-                    ))
-                    * 33 / 100),
+                    )),
+                    ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))/2,
+                    
                     round(max(abs(
                       age_sex_year_new_axis()$value
-                    ))
-                    * 66 / 100),
-                    round(max(abs(
-                      age_sex_year_new_axis()$value
-                    )))
-                  )
-                )),
+                    )),
+                    ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))
+               
+                    )
+                  ))
+                  
+                ,
                 
                 #Make the x axis title reactive.
                 
@@ -2524,9 +2521,7 @@ tabPanel(
                 ticks = "outside"
                 
               ),
-              
-              
-              
+      
               #Fix the margins so that the graph and axis titles have...
               #enough room to display nicely.
               #Set the font sizes.
