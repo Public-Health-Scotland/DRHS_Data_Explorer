@@ -2785,7 +2785,7 @@ tabPanel(
                    xaxis = list(tickangle = -45, 
                                 title = paste0(c(rep("&nbsp;", 20),
                                                  "<br>", 
-                                                 "SIMD",
+                                                 "Deprivation Quintile",
                                                  rep("&nbsp;", 20),
                                                  rep("\n&nbsp;", 3)),
                                                collapse = ""),
