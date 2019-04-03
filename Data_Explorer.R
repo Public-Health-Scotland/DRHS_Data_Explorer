@@ -40,11 +40,14 @@ path<- "\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publ
 
 #Data to be used for explorer and trend pages
 #Following is non-rounded data 
-all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY.rds"))
+#all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY.rds"))
 
 #Following is data that has been rounded to 5 and percentages calculated from rounded
 #figures. 
-#all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY_ROUNDED.rds"))
+all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY_ROUNDED.rds"))
+#need to rename the final column as value
+all_data<-all_data %>% 
+  rename("value" = value_Roun)
 
 #Round to two decimal places. 
 all_data<-all_data%>% 
@@ -78,8 +81,44 @@ all_data<-all_data %>%
 
 
 #Data that is not visualized  
-length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY.rds"))
-emergency_admissions<- readRDS(paste0(path,"s08-temp08_emerAdm_R-SHINY.rds"))
+length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY_ROUNDED.rds"))
+length_of_stay<-length_of_stay %>% 
+  rename("perc_less_1week" = perc_less_1week_round, 
+         "perc_more_1week" = perc_more_1week_round)
+
+length_of_stay<-length_of_stay %>% 
+  mutate(hos_clin_type= fct_recode(hos_clin_type, 
+                                   "General Acute and Psychiatric - Combined" = "Combined (SMR01/04) - Combined (Mental & Behavioural/Overdose)",  
+                                   "General Acute and Psychiatric - Mental & Behavioural" = "Combined (SMR01/04) - Mental & Behavioural",                      
+                                   "General Acute and Psychiatric - Overdose" = "Combined (SMR01/04) - Overdose" ,                                  
+                                   "General acute - Combined" =  "General acute (SMR01) - Combined (Mental & Behavioural/Overdose)",
+                                   "General acute - Mental & Behavioural" = "General acute (SMR01) - Mental & Behavioural",                    
+                                   "General acute - Overdose" =  "General acute (SMR01) - Overdose" ,                               
+                                   "Psychiatric - Combined" = "Psychiatric (SMR04) - Combined (Mental & Behavioural/Overdose)" ,  
+                                   "Psychiatric - Mental & Behavioural" = "Psychiatric (SMR04) - Mental & Behavioural" ,                      
+                                   "Psychiatric - Overdose" =  "Psychiatric (SMR04) - Overdose" ))
+
+
+
+emergency_admissions<- readRDS(paste0(path,"s08-temp08_emerAdm_R-SHINY_ROUNDED.rds"))
+
+
+emergency_admissions <-emergency_admissions %>% 
+  mutate(hos_clin_type= fct_recode(hos_clin_type, 
+                                   "General Acute and Psychiatric - Combined" = "Combined (SMR01/04) - Combined (Mental & Behavioural/Overdose)",  
+                                   "General Acute and Psychiatric - Mental & Behavioural" = "Combined (SMR01/04) - Mental & Behavioural",                      
+                                   "General Acute and Psychiatric - Overdose" = "Combined (SMR01/04) - Overdose" ,                                  
+                                   "General acute - Combined" =  "General acute (SMR01) - Combined (Mental & Behavioural/Overdose)",
+                                   "General acute - Mental & Behavioural" = "General acute (SMR01) - Mental & Behavioural",                    
+                                   "General acute - Overdose" =  "General acute (SMR01) - Overdose" ,                               
+                                   "Psychiatric - Combined" = "Psychiatric (SMR04) - Combined (Mental & Behavioural/Overdose)" ,  
+                                   "Psychiatric - Mental & Behavioural" = "Psychiatric (SMR04) - Mental & Behavioural" ,                      
+                                   "Psychiatric - Overdose" =  "Psychiatric (SMR04) - Overdose" ))
+
+emergency_admissions <-emergency_admissions %>% 
+  rename("perc_adm_emer" = perc_adm_emer_round, 
+         "perc_adm_other" = perc_adm_other_round)
+
 drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY.rds"))
 
 #filter data set for data for each tab
@@ -470,7 +509,7 @@ tabsetPanel(
       #Insert the reactive filters.
       #We have SIX filters at this point 
       # 1 - Hospital/Clinical type
-      # 2 - Activity Measure
+      # 2 - Activity Type
       # 3 - Geography Type
       # 4 - Geography (Multiple)
       # 5 - Substance
@@ -623,7 +662,7 @@ tabsetPanel(
       #Insert the reactive filters.
       #We have SIX filters at this point 
       # 1 - Hospital/Clinical type
-      # 2 - Activity Measure
+      # 2 - Activity Type
       # 3 - Geography Type
       # 4 - Geography 
       # 5 - Substance (Multiple)
@@ -800,7 +839,7 @@ p(HTML("To view your data selection in a table, use the
     #Insert the reactive filters.
     #We have FOUR filters at this point
     # 1 - Hospital/Clinical type
-    # 2 - Activity Measure
+    # 2 - Activity Type
     # 3 - Substance (dependent on Hospital/Clinic Type)
     # 4 - Measure
     
@@ -841,7 +880,7 @@ p(HTML("To view your data selection in a table, use the
         4,
         shinyWidgets::pickerInput(
           inputId = "Age",
-          label = "Select age (multiple selection)",
+          label = "Select age group (multiple selection)",
           choices = age,
           multiple = TRUE,
           selected = "All"
@@ -1045,7 +1084,7 @@ tabPanel(
     #Insert the reactive filters.
     #We have Five filters at this point
     # 1 - Hospital/Clinical type
-    # 2 - Activity Measure
+    # 2 - Activity Type
     # 3 - Substance (dependent on Hospital/Clinic Type)
     # 4 - Financial Year
     # 5 - Measure
@@ -2140,7 +2179,7 @@ tabPanel(
                      paste0("<b>",input$Hospital_Clinic_Type3,  " "  ,
                             str_sub(input$Activity_Type3,1,-2) , " ",input$Measure3,
                             " for ", input$Substances3,
-                            " Drug Types By Age And Sex","<b>"),
+                            " Drug Types By Age Group And Sex","<b>"),
                    
                    separators = ".",
                    
@@ -2423,7 +2462,7 @@ tabPanel(
               title = paste0(
                 "<b>",
                 input$Activity_Type3,
-                " in financial year ",
+                " in Financial Year ",
                 input$Financial_Year,
                 ",",
                 "<br>",
