@@ -57,7 +57,7 @@ all_data<-all_data%>%
 #The following code was used to quickly examine the effect of rounding to 3. It does 
 #not include percentages based on rounded figures. 
 
-# all_data<-all_data %>%
+  # all_data<-all_data %>%
 #   mutate(value =
 #   if_else(measure=="Number"
 #   & geography_type != "Scotland" ,
@@ -119,7 +119,10 @@ emergency_admissions <-emergency_admissions %>%
   rename("perc_adm_emer" = perc_adm_emer_round, 
          "perc_adm_other" = perc_adm_other_round)
 
-drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY.rds"))
+drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY_ROUNDED.rds"))
+
+drug_type_by_hospital<-drug_type_by_hospital %>% 
+  rename("total" = total_round)
 
 #filter data set for data for each tab
 
