@@ -39,44 +39,32 @@ path<- "\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publ
 
 
 #Data to be used for explorer and trend pages
-#Following is non-rounded data 
-#all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY.rds"))
 
-#Following is data that has been rounded to 5 and percentages calculated from rounded
-#figures. 
-all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY_ROUNDED.rds"))
+
+#Following is rounded data
+all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY_rounded.rds"))
 #need to rename the final column as value
 all_data<-all_data %>% 
-  rename("value" = value_Roun)
+  rename("value" = value_Round)
 
 #Round to two decimal places. 
 all_data<-all_data%>% 
   mutate(value = round(value, 2))
 
 
-#The following code was used to quickly examine the effect of rounding to 3. It does 
-#not include percentages based on rounded figures. 
-
-  # all_data<-all_data %>%
-#   mutate(value =
-#   if_else(measure=="Number"
-#   & geography_type != "Scotland" ,
-#    round(value/3)*3, value)
-#   )
 #We will manually change the names of factors in R until we have an agreed 
-#terminology for the hospital-clinical type. 
+#terminology for the hospital type and clinical type. 
 
 all_data<-all_data %>% 
-  mutate(hos_clin_type= fct_recode(hos_clin_type, 
-                                   "General Acute and Psychiatric - Combined" = "Combined (SMR01/04) - Combined (Mental & Behavioural/Overdose)",  
-                                   "General Acute and Psychiatric - Mental & Behavioural" = "Combined (SMR01/04) - Mental & Behavioural",                      
-                                   "General Acute and Psychiatric - Overdose" = "Combined (SMR01/04) - Overdose" ,                                  
-                                   "General acute - Combined" =  "General acute (SMR01) - Combined (Mental & Behavioural/Overdose)",
-                                   "General acute - Mental & Behavioural" = "General acute (SMR01) - Mental & Behavioural",                    
-                                   "General acute - Overdose" =  "General acute (SMR01) - Overdose" ,                               
-                                   "Psychiatric - Combined" = "Psychiatric (SMR04) - Combined (Mental & Behavioural/Overdose)" ,  
-                                   "Psychiatric - Mental & Behavioural" = "Psychiatric (SMR04) - Mental & Behavioural" ,                      
-                                   "Psychiatric - Overdose" =  "Psychiatric (SMR04) - Overdose" ))
+  mutate(hospital_type= fct_recode(hospital_type, 
+                                   "General acute"= "General acute (SMR01)",
+                                   "Psychiatric" ="Psychiatric (SMR04)",
+                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"))
+
+all_data<-all_data %>% 
+  mutate(clinical_type= fct_recode(clinical_type, 
+                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"))
+
 
 
 
@@ -122,7 +110,7 @@ emergency_admissions <-emergency_admissions %>%
 drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY_ROUNDED.rds"))
 
 drug_type_by_hospital<-drug_type_by_hospital %>% 
-  rename("total" = total_round)
+  rename("total" = total_rounded)
 
 #filter data set for data for each tab
 
@@ -147,14 +135,11 @@ deprivation <- all_data %>%
 #We then create the options for users to choose from in the drop down menus. 
 #Drug Types are created as list to allow different options dependent on the 
 #Hospital admission types
-clinical_types <- as.character(unique(all_data$hos_clin_type))
+hospital_types <- as.character(unique(all_data$hospital_type))
+clinical_types <- as.character(unique(all_data$clinical_type))
 activity_type <- as.character(unique(all_data$activity_type))
 location_types <- as.character(unique(all_data$geography_type))
 locations<- as.character(unique(all_data$geography))
-Scotland<-locations[1:3]
-Health_Board<-locations[4:17]
-ADP<- locations[18:48]
-
 
 geography_list<-list("Scotland" = locations[1:3],
                      "NHS Board of residence" = locations[4:17],
@@ -219,15 +204,15 @@ demographic_summary<- all_data  %>%
 
 #Keep only those columns that are necessary
 activity_summary<-activity_summary %>% 
-  select(year,hos_clin_type,activity_type,
+  select(year,hospital_type,clinical_type,activity_type,
          geography_type,geography,value)
 
 drug_summary<-drug_summary %>% 
-  select(year,hos_clin_type,drug_type,
+  select(year,hospital_type,clinical_type,drug_type,
          geography_type,geography,value)
 
 demographic_summary<-demographic_summary %>% 
-  select(year,hos_clin_type,
+  select(year,hospital_type,clinical_type,
          geography_type,geography,
          age_group,sex,simd,
          value)
@@ -520,8 +505,24 @@ tabsetPanel(
       
       column(
         4,
-        uiOutput("time_trend_clinical_type"), 
-        uiOutput("time_trend_location_types"), 
+        shinyWidgets::pickerInput(
+          inputId = "Hospital_Type",
+          label = "Select hospital type",
+          choices = hospital_types
+        ), 
+        shinyWidgets::pickerInput(
+          inputId = "Location",
+          label = "Select location (multiple selection)",
+          choices = geography_list,
+          multiple = TRUE,
+          selected = "Scotland",
+          options = list(size=10, 
+                         `live-search`=TRUE, 
+                         `selected-text-format` = "count > 1", 
+                         `count-selected-text` = "{0} locations chosen (8 Max)",
+                         "max-options" = 8,
+                         "max-options-text" = "Only 8 options can be chosen")
+        ),
         downloadButton(outputId = "download_geography", 
                        label = "Download data", 
                        class = "geographybutton"),
@@ -536,18 +537,17 @@ tabsetPanel(
       
       column(
         4,
-        shinyWidgets::pickerInput(
-          inputId = "Activity_Type",
-          label = "Select activity type",
-          choices = activity_type
-        ),
-        uiOutput("time_trend_locations")
+        uiOutput("time_trend_clinical_type"), 
+        uiOutput("time_trend_substance1")
         ),
         
         column(
           4,
-          
-          uiOutput("time_trend_substance1"),
+          shinyWidgets::pickerInput(
+            inputId = "Activity_Type",
+            label = "Select activity type",
+            choices = activity_type
+          ),
           shinyWidgets::pickerInput(
             inputId = "Measure",
             label = "Select measure",
@@ -949,6 +949,7 @@ p(HTML("To view your data selection in a table, use the
       br(),
       column(
         8,
+        chooseSliderSkin("Modern"),
         shinyWidgets::sliderTextInput(
           inputId = "Financial_Year",
           label = "Select financial year",
@@ -1314,40 +1315,17 @@ tabPanel(
       #This is because the 'location' input is dependent on the 'location
       #type' input. 
       
-      
-      output$time_trend_location_types <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Geography_type", 
-                                  label = "Select location type (multiple selection)",
-                                  choices = location_types, 
-                                  selected = "Scotland", 
-                                  multiple = TRUE)
-      })
 
-      output$time_trend_locations <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Geography",
-                                  label = "Select location (multiple selection)",  
-                                  choices = geography_list[input$Geography_type],
-                                  multiple = TRUE,
-                                 
-                                  options = list (`selected-text-format` = "count > 1", 
-                                                  `count-selected-text` = "{0} locations chosen (8 Max)",
-                                                  "max-options" = 8,
-                                                  "max-options-text" = "Only 8 options can be chosen"),
-                                  selected = geography_list[input$Geography_type][[1]][1]
-        )
-      }) 
-      
       output$time_trend_clinical_type <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type", 
-                                  label = "Select hospital - clinical type",
-                                  choices = clinical_types, 
-                                  selected = clinical_types[9])
+        shinyWidgets::pickerInput(inputId = "Clinical_Type", 
+                                  label = "Select clinical type",
+                                  choices = clinical_types)
       })
 
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
                                   label = "Select drug type",  
-                                  choices = (if(str_detect(input$Hospital_Clinic_Type, " Overdose"))
+                                  choices = (if(input$Clinical_Type == "Overdose")
                                     drug_types1
                                     else
                                       drug_types2), 
@@ -1362,20 +1340,23 @@ tabPanel(
       geography_new <- reactive({
         time_trend %>%
           filter(
-            hos_clin_type %in% input$Hospital_Clinic_Type
+            hospital_type %in% input$Hospital_Type
+            & clinical_type %in% input$Clinical_Type
             & activity_type %in% input$Activity_Type
-            & geography %in% input$Geography
+            & geography %in% input$Location
             & drug_type %in% input$Substances
             & measure %in% input$Measure 
-          )
+          )%>%
+          select(year, hospital_type, clinical_type, activity_type,
+                 geography_type, geography, drug_type,value)
       })
       
       #then we can plot the actual graph, with labels
       output$geography_plot <- renderPlotly({
         
-        if ((input$Geography == 
+        if ((input$Location == 
             "Outside Scotland"|
-             input$Geography == 
+             input$Location == 
              "Other/Not Known")
           & input$Measure== 
              "Rate"
@@ -1449,8 +1430,7 @@ tabPanel(
         }
         
         
-        else if (is.null(input$Geography_type)|
-                 is.null(input$Geography))
+        else if (is.null(input$Location))
                  
         { 
           
@@ -1539,10 +1519,16 @@ tabPanel(
           
           layout(
             #Title
-          title =
-                   paste0( "<b>",input$Hospital_Clinic_Type,  " "  ,
-                            str_sub(input$Activity_Type,1,-2) , " ",input$Measure,
-                           " By Location","<b>"),
+          title = (paste0("<b>",
+            (str_to_sentence(paste0(str_sub(input$Activity_Type,1,-2),
+                                          " ", input$Measure,  " for ",
+                                          input$Hospital_Type,
+                                          " hospitals as result of ", 
+                                          input$Clinical_Type,
+                                          " due to ", 
+                                          input$Substances,
+                                          " by location"))),"<b>")),
+            
                  separators = ".",
           
           #y=axis formatting       
@@ -1614,34 +1600,19 @@ tabPanel(
         }
       })
       
-      #Create new data table for geography
-      
-      geography_new_table<-reactive({time_trend %>%
-          filter(
-            hos_clin_type %in% input$Hospital_Clinic_Type
-            & activity_type %in% input$Activity_Type
-            & geography %in% input$Geography
-            & drug_type %in% input$Substances
-            & measure %in% input$Measure
-          )%>%
-          select(year, hos_clin_type,activity_type,geography_type,
-                 geography, drug_type,value)
-      })
-      
-      
+
       #Insert table
       output$geography_table <- renderDataTable({
-        datatable(geography_new_table(),
+        datatable(geography_new(),
                   colnames = c("Financial year",
-                               "Hospital clinical type",
+                               "Hospital type",
+                               "Clinical type",
                                "Activity type",
                                "Location type",
                                "Location",
                                "Drug type",
                                input$Measure),
                   rownames = FALSE,
-                  options = list(searching= FALSE,
-                                 lengthChange= FALSE),
                   style = "Bootstrap"
         )
       })
@@ -1652,12 +1623,12 @@ tabPanel(
       output$download_geography <- downloadHandler(
         filename = 'time_trend_geography_data.csv',
         content = function(file) {
-          write.table(geography_new_table(), 
+          write.table(geography_new(), 
                       file,
                       #Remove row numbers as the CSV file already has row numbers.
                       
                       row.names = FALSE,
-                      col.names = c("Financial year", "Hospital clinical type", 
+                      col.names = c("Financial year", "Hospital type", "Clinical type",
                                     "Activity type" ,"Location type","Location", 
                                     "Drug type", 
                                     input$Measure), 
