@@ -673,10 +673,20 @@ tabsetPanel(
       
       column(
         4,
-        
-        uiOutput("time_trend_clinical_type2"), 
-        uiOutput("time_trend_location_types2"),
-       
+        shinyWidgets::pickerInput(
+          inputId = "Hospital_Type2",
+          label = "Select hospital type",
+          choices = hospital_types
+        ), 
+        shinyWidgets::pickerInput(
+          inputId = "Location2",
+          label = "Select location",
+          choices = geography_list,
+          multiple = TRUE,
+          selected = "Scotland",
+          options = list(size=10, 
+                         `live-search`=TRUE)
+        ),
         downloadButton(outputId = "download_substances", 
                        label = "Download data", 
                        class = "substancesbutton"),
@@ -685,9 +695,14 @@ tabsetPanel(
           tags$style(".substancesbutton { background-color: 
                      #0072B2; } 
                      .substancesbutton { color: #FFFFFF; }")
-        )
+          )
         
-        
+      ),
+      
+      column(
+        4,
+        uiOutput("time_trend_clinical_type2"), 
+        uiOutput("time_trend_substance2")
       ),
       
       column(
@@ -695,27 +710,14 @@ tabsetPanel(
         shinyWidgets::pickerInput(
           inputId = "Activity_Type2",
           label = "Select activity type",
-          choices = activity_type,
-          selected = "Stays"
-        ), 
-        uiOutput("time_trend_locations2")
-      ),
-      
-
-     
-      
-      column(
-        4,
-        uiOutput("time_trend_substance2"),
-
+          choices = activity_type
+        ),
         shinyWidgets::pickerInput(
           inputId = "Measure2",
           label = "Select measure",
           choices = measures,
           selected = "Rate"
         )
-        
-        
       )
     ),
     
@@ -846,25 +848,32 @@ p(HTML("To view your data selection in a table, use the
     # 3 - Substance (dependent on Hospital/Clinic Type)
     # 4 - Measure
     
-    column(6,
-           uiOutput("age_sex_clinical_type"), 
+    column(4,
+           shinyWidgets::pickerInput(
+             inputId = "Hospital_Type3",
+             label = "Select hospital type",
+             choices = hospital_types
+           ),
            uiOutput("age_sex_substance")),
     
     column(
-      6,
-      shinyWidgets::pickerInput(
-        inputId = "Activity_Type3",
-        label = "Select activity type",
-        choices = activity_type,
-        selected = "Stays"
-      ),
+      4,
+      uiOutput("age_sex_clinical_type"),
       shinyWidgets::pickerInput(
         inputId = "Measure3",
         label = "Select measure",
         choices = measures,
         selected = "Rate"
       )
-    )
+    ), 
+    
+    column(4,
+           shinyWidgets::pickerInput(
+             inputId = "Activity_Type3",
+             label = "Select activity type",
+             choices = activity_type,
+             selected = "Stays"
+           ))
   ),
 
   
@@ -917,7 +926,7 @@ p(HTML("To view your data selection in a table, use the
                 class = "myagesextrendbutton"
               )
               ),
-      
+       
       br(),
       br(),
       br(),
@@ -1646,39 +1655,18 @@ tabPanel(
       #type' input. 
       
       
-      output$time_trend_location_types2 <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Geography_type2", 
-                                  label = "Select location type",
-                                  choices = location_types, 
-                                  selected = "Scotland")
-      })
-      
-      output$time_trend_locations2 <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Geography2",
-                                  label = "Select location",  
-                                  choices = 
-                                    unique(
-                                      as.character(
-                                        time_trend$geography
-                                        [time_trend$geography_type %in% input$Geography_type2]
-                                      )
-                                    ),
-                                  selected = "Scotland"
-        )
-      }) 
       
       
       output$time_trend_clinical_type2 <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Hospital_Clinic_Type2", 
-                                  label = "Select hospital - clinical type",
-                                  choices = clinical_types, 
-                                  selected = clinical_types[9])
+        shinyWidgets::pickerInput(inputId = "Clinical_Type2", 
+                                  label = "Select clinical type",
+                                  choices = clinical_types)
       })
       
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
                                   label = "Select drug type (multiple selection)",  
-                                  choices = (if(str_detect(input$Hospital_Clinic_Type2, " Overdose"))
+                                  choices = (if(input$Clinical_Type2 == "Overdose")
                                   drug_types1
                                   else
                                   drug_types2),
@@ -1695,20 +1683,23 @@ tabPanel(
       substances_new <- reactive({
         time_trend %>%
           filter(
-            hos_clin_type %in% input$Hospital_Clinic_Type2
+            hospital_type %in% input$Hospital_Type2
+            & clinical_type %in% input$Clinical_Type2
             & activity_type %in% input$Activity_Type2
-            & geography %in% input$Geography2
+            & geography %in% input$Location2
             & drug_type %in% input$Substances2
             & measure %in% input$Measure2
-          )
+          )%>%
+          select(year, hospital_type, clinical_type, activity_type,
+                 geography_type, geography, drug_type,value)
       })
       
       #then we can plot the actual graph, with labels
       output$substances_plot <- renderPlotly({
         
-        if ((input$Geography2 == 
+        if ((input$Location2 == 
              "Outside Scotland"|
-             input$Geography2 == 
+             input$Location2 == 
              "Other/Not Known")
             & input$Measure2 == 
             "Rate"
@@ -1866,10 +1857,15 @@ tabPanel(
           
           layout(
             #Title
-            title =
-              paste0("<b>", input$Hospital_Clinic_Type2,  " "  ,
-                      str_sub(input$Activity_Type2,1,-2), " ",input$Measure2,
-                      " By Drug Type","<b>"),
+            title =(paste0("<b>",
+                           (str_to_sentence(paste0(str_sub(input$Activity_Type2,1,-2),
+                                                   " ", input$Measure2,  " for ",
+                                                   input$Hospital_Type2,
+                                                   " hospitals as result of ", 
+                                                   input$Clinical_Type2,
+                                                   " due to ", 
+                                                   input$Location2,
+                                                   " by drug type"))),"<b>")),
             separators = ".",
             
             #y=axis formatting       
@@ -1938,30 +1934,19 @@ tabPanel(
         }  
       })
       
-      
-      substances_new_table<-reactive({time_trend %>%
-          filter(
-            hos_clin_type %in% input$Hospital_Clinic_Type2
-            & activity_type %in% input$Activity_Type2
-            & geography %in% input$Geography2
-            & drug_type %in% input$Substances2
-            & measure %in% input$Measure2
-          )%>%
-          select(year, hos_clin_type,activity_type,geography,
-                 drug_type,value)
-      })
+
       
       #Insert table
       output$substances_table <- renderDataTable({
-        datatable(substances_new_table(),
+        datatable(substances_new(),
                   colnames = c("Financial year",
-                               "Hospital clinical type",
+                               "Hospital type",
+                               "Clinical type",
                                "Activity type",
+                               "Location type",
                                "Location",
                                "Drug type",
                                input$Measure2),
-                  options = list(searching= FALSE,
-                                 lengthChange= FALSE),
                   rownames = FALSE,
                   style = "Bootstrap")
       })
@@ -1969,13 +1954,17 @@ tabPanel(
         output$download_substances <- downloadHandler(
           filename = 'time_trend_Substance_data.csv',
           content = function(file) {
-            write.table(substances_new_table(), 
+            write.table(substances_new(), 
                         file,
                         #Remove row numbers as the CSV file already has row numbers.
                         
                         row.names = FALSE,
-                        col.names = c("Financial year", "Hospital clinical type", 
-                                      "Activity type" ,"Location", 
+                        col.names = c("Financial year", 
+                                      "Hospital type", 
+                                      "Clinical type", 
+                                      "Activity type" ,
+                                      "Location type",
+                                      "Location", 
                                       "Drug type", 
                                       input$Measure2), 
                         sep = ",")
@@ -1989,10 +1978,9 @@ tabPanel(
         
         output$age_sex_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
-            inputId = "Hospital_Clinic_Type3",
-            label = "Select hospital - clinical type",
-            choices = clinical_types,
-            selected = clinical_types[9]
+            inputId = "Clinical_Type3",
+            label = "Select clinical type",
+            choices = clinical_types
           )
         })
         
@@ -2000,7 +1988,7 @@ tabPanel(
           shinyWidgets::pickerInput(
             inputId = "Substances3",
             label = "Select drug type",
-            choices = (if (str_detect(input$Hospital_Clinic_Type3, " Overdose"))
+            choices = (if (input$Clinical_Type3 == "Overdose")
               drug_types1
               else
                 drug_types2),
@@ -2019,14 +2007,17 @@ tabPanel(
         age_sex_time_new <- reactive({
           age_sex %>%
             filter(
-              hos_clin_type %in% input$Hospital_Clinic_Type3
+              hospital_type %in% input$Hospital_Type3
+              & clinical_type %in% input$Clinical_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
               #and the age/sex options
               & age_group %in% input$Age
               & sex %in% input$Sex
-            )
+            ) %>%
+            select(year, hospital_type, clinical_type, activity_type,
+                   drug_type, age_group,sex,value)
         })
 
         
@@ -2227,38 +2218,24 @@ tabPanel(
           }
         })
         
-   
-        #we can now add in the table for the time trend
-        age_sex_trend_table <- reactive({
-          age_sex %>%
-            filter(
-              hos_clin_type %in% input$Hospital_Clinic_Type3
-              & activity_type %in% input$Activity_Type3
-              & drug_type %in% input$Substances3
-              & measure %in% input$Measure3
-              & age_group %in% input$Age
-              & sex %in% input$Sex
-            ) %>%
-            select(-measure)
-        })
+
         
         #Table
         output$age_sex_trend_table <- renderDataTable({
           datatable(
-            age_sex_trend_table(),
+            age_sex_time_new(),
             style = 'bootstrap',
             rownames = FALSE,
             colnames = c(
               "Financial year",
-              "Hospital clinical type",
+              "Hospital  type",
+              "Clinical type",
               "Activity type",
               "Drug type",
-              "Age",
+              "Age group",
               "Sex",
               input$Measure3
-            ),
-            options = list(searching= FALSE,
-                           lengthChange= FALSE)
+            )
           )
         })
         
@@ -2268,17 +2245,18 @@ tabPanel(
           filename = 'age_sex_trend_data.csv',
           content = function(file) {
             write.table(
-              age_sex_trend_table(),
+              age_sex_time_new(),
               file,
               #Remove row numbers as the CSV file already has row numbers.
               
               row.names = FALSE,
               col.names = c(
                 "Financial year",
-                "Hospital clinical type",
+                "Hospital type",
+                "Clinical type",
                 "Activity type",
                 "Drug type",
-                "Age",
+                "Age group",
                 "Sex",
                 input$Measure3
               ),
@@ -2296,7 +2274,8 @@ tabPanel(
           age_sex_tornado %>%
             filter(
               year %in% input$Financial_Year
-              & hos_clin_type %in% input$Hospital_Clinic_Type3
+              & hospital_type %in% input$Hospital_Type3
+              & clinical_type %in% input$Clinical_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
@@ -2306,7 +2285,8 @@ tabPanel(
         
         age_sex_year_new_axis <- reactive({
           age_sex_tornado %>%
-            filter(hos_clin_type %in% input$Hospital_Clinic_Type3
+            filter(hospital_type %in% input$Hospital_Type3
+                   & clinical_type %in% input$Clinical_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
@@ -2586,12 +2566,13 @@ tabPanel(
           age_sex_tornado %>%
             filter(
               year %in% input$Financial_Year
-              & hos_clin_type %in% input$Hospital_Clinic_Type3
+              & hospital_type %in% input$Hospital_Type3
+              & clinical_type %in% input$Clinical_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
             ) %>%
-            select(-measure) %>%
+            select(-measure, -hos_clin_type) %>%
             mutate(value = abs(value))
           
         })
@@ -2604,7 +2585,8 @@ tabPanel(
             rownames = FALSE,
             colnames = c(
               "Financial year",
-              "Hospital clinical type",
+              "Hospital type",
+              "Clinical type",
               "Activity type",
               "Drug type",
               "Age",
@@ -2629,7 +2611,8 @@ tabPanel(
               row.names = FALSE,
               col.names = c(
                 "Financial year",
-                "Hospital clinical type",
+                "Hospital type",
+                "Clinical type",
                 "Activity type",
                 "Drug type",
                 "Age",
