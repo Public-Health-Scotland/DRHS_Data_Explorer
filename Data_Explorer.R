@@ -1103,13 +1103,13 @@ tabPanel(
     # 5 - Measure
     
     column(4,
-           uiOutput("SIMD_clinical_type"), 
-           
            shinyWidgets::pickerInput(
-             inputId = "Financial_Year2",
-             label = "Select financial year",
-             choices =  rev(financial_years),
-             selected = "2017/18"), 
+             inputId = "Hospital_Type4",
+             label = "Select hospital type",
+             choices = hospital_types
+           ),
+           uiOutput("SIMD_substance"),
+
            downloadButton(
              outputId = "download_SIMD",
              label = "Download data",
@@ -1126,22 +1126,32 @@ tabPanel(
     
     column(
       4,
+      
+      uiOutput("SIMD_clinical_type"), 
+      
       shinyWidgets::pickerInput(
-        inputId = "Activity_Type4",
-        label = "Select activity type",
-        choices = activity_type,
-        selected = "Stays"
-      ), 
-      shinyWidgets::pickerInput(
-        inputId = "Measure4",
-        label = "Select measure",
-        choices = measures,
-        selected = "Rate"
-      )
+        inputId = "Financial_Year2",
+        label = "Select financial year",
+        choices =  rev(financial_years),
+        selected = "2017/18")
+      
+
     ),
     
     column(4,
-           uiOutput("SIMD_substance"))
+           shinyWidgets::pickerInput(
+             inputId = "Activity_Type4",
+             label = "Select activity type",
+             choices = activity_type,
+             selected = "Stays"
+           ), 
+           shinyWidgets::pickerInput(
+             inputId = "Measure4",
+             label = "Select measure",
+             choices = measures,
+             selected = "Rate"
+           )
+    )  
   ),
   
   
@@ -2633,10 +2643,9 @@ tabPanel(
         
         output$SIMD_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
-            inputId = "Hospital_Clinic_Type4",
-            label = "Select hospital - clinical type",
-            choices = clinical_types,
-            selected = clinical_types[9]
+            inputId = "Clinical_Type4",
+            label = "Select clinical type",
+            choices = clinical_types
           )
         })
         
@@ -2644,7 +2653,7 @@ tabPanel(
           shinyWidgets::pickerInput(
             inputId = "Substances4",
             label = "Select drug type",
-            choices = (if (str_detect(input$Hospital_Clinic_Type4, " Overdose"))
+            choices = (if (input$Clinical_Type4 == "Overdose")
               drug_types1
               else
                 drug_types2),
@@ -2657,13 +2666,16 @@ tabPanel(
         SIMD_new <- reactive({
           deprivation %>%
             filter(
-              hos_clin_type %in% input$Hospital_Clinic_Type4
+              hospital_type %in% input$Hospital_Type4
+              & clinical_type %in% input$Clinical_Type4
               & activity_type %in% input$Activity_Type4
               & drug_type %in% input$Substances4
               & measure %in% input$Measure4
               #and the year options
               & year %in% input$Financial_Year2
-            )
+            )%>%
+            select(year, hospital_type, clinical_type, activity_type,
+                    drug_type,simd, value)
         })
         
         
@@ -2822,39 +2834,21 @@ tabPanel(
         })
         
         
-        
-        
-        
-        #we can now add in the table for the bar chart- values
-        #have to be reassigned to positive values
-        SIMD_table <- reactive({
-          deprivation %>%
-            filter(
-              hos_clin_type %in% input$Hospital_Clinic_Type4
-              & activity_type %in% input$Activity_Type4
-              & drug_type %in% input$Substances4
-              & measure %in% input$Measure4
-              & year %in% input$Financial_Year2
-            )%>%
-            select(-measure)
-        })
-        
         #Table
         output$SIMD_table <- renderDataTable({
           datatable(
-            SIMD_table(),
+            SIMD_new(),
             style = 'bootstrap',
             rownames = FALSE,
             colnames = c(
               "Financial year",
-              "Hospital clinical type",
+              "Hospital type",
+              "Clinical type",
               "Activity type",
               "Drug type",
               "Deprivation index",
               input$Measure4
-            ),
-            options = list(searching= FALSE,
-                           lengthChange= FALSE)
+            )
           )
         })
         
@@ -2864,16 +2858,16 @@ tabPanel(
           filename = 'deprivation.csv',
           content = function(file) {
             write.table(
-              SIMD_table(),
+              SIMD_new(),
               file,
               #Remove row numbers as the CSV file already has row numbers.
               
               row.names = FALSE,
               col.names = c(
                 "Financial year",
-                "Hospital clinical type",
+                "Hospital type",
+                "Clinical type",
                 "Activity type",
-                "Location",
                 "Drug type",
                 "Deprivation index",
                 input$Measure4
