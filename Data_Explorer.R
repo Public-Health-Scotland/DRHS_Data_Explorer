@@ -65,6 +65,9 @@ all_data<-all_data %>%
   mutate(clinical_type= fct_recode(clinical_type, 
                                    "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"))
 
+#drop the hospital-clinical type columne
+all_data<-all_data %>% 
+  select(-hos_clin_type)
 
 
 
@@ -72,45 +75,26 @@ all_data<-all_data %>%
 length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY_ROUNDED.rds"))
 length_of_stay<-length_of_stay %>% 
   rename("perc_less_1week" = perc_less_1week_round, 
-         "perc_more_1week" = perc_more_1week_round)
-
-length_of_stay<-length_of_stay %>% 
-  mutate(hos_clin_type= fct_recode(hos_clin_type, 
-                                   "General Acute and Psychiatric - Combined" = "Combined (SMR01/04) - Combined (Mental & Behavioural/Overdose)",  
-                                   "General Acute and Psychiatric - Mental & Behavioural" = "Combined (SMR01/04) - Mental & Behavioural",                      
-                                   "General Acute and Psychiatric - Overdose" = "Combined (SMR01/04) - Overdose" ,                                  
-                                   "General acute - Combined" =  "General acute (SMR01) - Combined (Mental & Behavioural/Overdose)",
-                                   "General acute - Mental & Behavioural" = "General acute (SMR01) - Mental & Behavioural",                    
-                                   "General acute - Overdose" =  "General acute (SMR01) - Overdose" ,                               
-                                   "Psychiatric - Combined" = "Psychiatric (SMR04) - Combined (Mental & Behavioural/Overdose)" ,  
-                                   "Psychiatric - Mental & Behavioural" = "Psychiatric (SMR04) - Mental & Behavioural" ,                      
-                                   "Psychiatric - Overdose" =  "Psychiatric (SMR04) - Overdose" ))
+         "perc_more_1week" = perc_more_1week_round,
+         "total" = total_rounded)%>% 
+  select(-hos_clin_type)
 
 
 
 emergency_admissions<- readRDS(paste0(path,"s08-temp08_emerAdm_R-SHINY_ROUNDED.rds"))
-
-
-emergency_admissions <-emergency_admissions %>% 
-  mutate(hos_clin_type= fct_recode(hos_clin_type, 
-                                   "General Acute and Psychiatric - Combined" = "Combined (SMR01/04) - Combined (Mental & Behavioural/Overdose)",  
-                                   "General Acute and Psychiatric - Mental & Behavioural" = "Combined (SMR01/04) - Mental & Behavioural",                      
-                                   "General Acute and Psychiatric - Overdose" = "Combined (SMR01/04) - Overdose" ,                                  
-                                   "General acute - Combined" =  "General acute (SMR01) - Combined (Mental & Behavioural/Overdose)",
-                                   "General acute - Mental & Behavioural" = "General acute (SMR01) - Mental & Behavioural",                    
-                                   "General acute - Overdose" =  "General acute (SMR01) - Overdose" ,                               
-                                   "Psychiatric - Combined" = "Psychiatric (SMR04) - Combined (Mental & Behavioural/Overdose)" ,  
-                                   "Psychiatric - Mental & Behavioural" = "Psychiatric (SMR04) - Mental & Behavioural" ,                      
-                                   "Psychiatric - Overdose" =  "Psychiatric (SMR04) - Overdose" ))
-
 emergency_admissions <-emergency_admissions %>% 
   rename("perc_adm_emer" = perc_adm_emer_round, 
-         "perc_adm_other" = perc_adm_other_round)
+         "perc_adm_other" = perc_adm_other_round,
+         "total" = total_rounded) %>% 
+  select(-hos_clin_type)
+
+
 
 drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY_ROUNDED.rds"))
 
 drug_type_by_hospital<-drug_type_by_hospital %>% 
-  rename("total" = total_rounded)
+  rename("total" = total_rounded) %>% 
+  select(-hos_clin_type)
 
 #filter data set for data for each tab
 
@@ -2892,7 +2876,8 @@ tabPanel(
           switch(input$table_filenames,
                  "Time trend (Data explorer)" = time_trend %>%
                    rename("Financial year" = year, 
-                          "Hospital clinical type" = hos_clin_type,
+                          "Hospital type" = hospital_type,
+                          "Clinical type" = clinical_type,
                           "Activity type" = activity_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
@@ -2901,7 +2886,8 @@ tabPanel(
                           "Number" = value) ,
                  "Age/sex (Data explorer)" = age_sex %>%
                    rename("Financial year" = year, 
-                          "Hospital clinical type" = hos_clin_type,
+                          "Hospital type" = hospital_type,
+                          "Clinical type" = clinical_type,
                           "Activity type" = activity_type,
                           "Drug type" = drug_type,
                           "Age group" = age_group,
@@ -2910,7 +2896,8 @@ tabPanel(
                           "Number" = value),
                  "Deprivation (Data explorer)" = deprivation %>%
                    rename("Financial year" = year, 
-                          "Hospital clinical type" = hos_clin_type,
+                          "Hospital type" = hospital_type,
+                          "Clinical type" = clinical_type,
                           "Activity type" = activity_type,
                           "Drug type" = drug_type,
                           "Deprivation" = simd,
@@ -2918,21 +2905,24 @@ tabPanel(
                           "Number" = value),
                  "Activity summary (Data trend)" = activity_summary %>% 
                  rename("Financial year" = year, 
-                        "Hospital clinical type" = hos_clin_type,
+                        "Hospital type" = hospital_type,
+                        "Clinical type" = clinical_type,
                         "Activity type" = activity_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Rate" = value),
                  "Drug summary (Data trend)" = drug_summary %>% 
                  rename("Financial year" = year, 
-                        "Hospital clinical type" = hos_clin_type,
+                        "Hospital type" = hospital_type,
+                        "Clinical type" = clinical_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Drug type" = drug_type,
                         "Rate" = value),
                  "Demographic summary (Data trend)" = demographic_summary %>% 
                  rename("Financial year" = year, 
-                        "Hospital clinical type" = hos_clin_type,
+                        "Hospital type" = hospital_type,
+                        "Clinical type" = clinical_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Age group" = age_group,
@@ -2941,7 +2931,8 @@ tabPanel(
                         "Rate" = value),
                  "Length of stay" = length_of_stay %>% 
                    rename("Financial year" = year, 
-                          "Hospital clinical type" = hos_clin_type,
+                          "Hospital type" = hospital_type,
+                          "Clinical type" = clinical_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
                           "Drug type" = drug_type,
@@ -2949,13 +2940,14 @@ tabPanel(
                           "Sex" = sex,
                           "Deprivation index" = simd,
                           "Number of stays" = total, 
-                          "Percentage <1 week" = perc_less_1week,
-                          "Percentage >1 week" = perc_more_1week,
+                          "<1 week %" = perc_less_1week,
+                          ">1 week %" = perc_more_1week,
                           "Median length of stay" = med_los
                    ),
                  "Emergency admissions" = emergency_admissions %>% 
                    rename("Financial year" = year, 
-                          "Hospital clinical type" = hos_clin_type,
+                          "Hospital type" = hospital_type,
+                          "Clinical type" = clinical_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
                           "Drug type" = drug_type,
@@ -2963,19 +2955,20 @@ tabPanel(
                           "Sex" = sex,
                           "Deprivation index" = simd,
                           "Number of stays" = total,
-                          "Percentatge emergency admissions" = perc_adm_emer,
-                          "Percentage non-emergency admissions" = perc_adm_other
+                          "Emergency admissions %" = perc_adm_emer,
+                          "Non-emergency admissions %" = perc_adm_other
                           
                      
                    ),
                  "Drug type by hospital" = drug_type_by_hospital %>% 
                    rename("Financial year" = year, 
-                          "Hospital clinical type" = hos_clin_type,
+                          "Hospital type" = hospital_type,
+                          "Clinical type" = clinical_type,
                           "Activity type" = activity_type, 
                           "Drug type" = drug_type,
-                          "Percentage SMR01" = perc_source01,
-                          "Percentage SMR04" = perc_source04,
-                          "Percentage both" = perc_sourceBOTH, 
+                          "SMR01 %" = perc_source01,
+                          "SMR04 %" = perc_source04,
+                          "SMR01 and SMR04 %" = perc_sourceBOTH, 
                           "Number" = total
                    )
                  
