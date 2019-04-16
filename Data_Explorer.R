@@ -942,15 +942,17 @@ p(HTML("To view your data selection in a table, use the
       br(),
       column(
         8,
-        chooseSliderSkin("Modern"),
+        chooseSliderSkin("HTML5"),
         shinyWidgets::sliderTextInput(
           inputId = "Financial_Year",
           label = "Select financial year",
           choices = financial_years,
           selected = "2017/18",
           grid = T,
-          animate = T,
+          animate = animationOptions(playButton =icon('play', "fa-3x"),
+                                     pauseButton = icon('pause', "fa-3x")),
           width = "1090px"
+          
         )
         ),
       column(1),
