@@ -1827,10 +1827,12 @@ tabPanel(
           y = ~  value,
           color = ~  drug_type,
           colors = 
-            #Colors are assigned alphabetically -All is assigned dark blue
-          { print(c("#0072B2",
-            brewer.pal(10, "Paired")[c(1,3:10)]
-          )) },
+            #Colors are assigned to each drug type
+          c('#000000','#b66dff','#004949',
+            '#b6dbff','#490092','#920000',
+            '#006ddb','#6db6ff','#db6d00',
+            '#ffb6db'
+          ),
           name = ~ str_wrap(drug_type,10),
           #tooltip
                     text = tooltip_substances,
