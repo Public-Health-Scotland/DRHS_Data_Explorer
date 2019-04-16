@@ -2108,16 +2108,16 @@ tabPanel(
           
           plot_ly(
             data = age_sex_time_new(),
-            #plot- we wont bother at this point with tailored colour
+            #plot
             x = ~  year,
             y = ~  value,
             color = ~  age_group,
-            colors = #Colors are assigned alphabetically -All is assigned dark blue
-            { print(c(
-                      brewer.pal(8, "Paired")[c(1,3:8)],
-                      "#0072B2"
-            )) },
-            #so we can try different symbols as well as different linetypes to
+            colors = #Colors are assigned 
+            c('#b66dff','#db6d00','#920000','#006ddb',
+              '#490092','#6db6ff',
+              '#004949', '#000000'
+            ),
+            #so we will use different linetypes to
             #distinguish between sex.
             linetype = ~ sex,
             #tooltip
