@@ -1351,7 +1351,8 @@ tabPanel(
             & measure %in% input$Measure 
           )%>%
           select(year, hospital_type, clinical_type, activity_type,
-                 geography_type, geography, drug_type,value)
+                 geography_type, geography, drug_type,value) %>% 
+          droplevels()
       })
       
       #then we can plot the actual graph, with labels
@@ -1492,16 +1493,12 @@ tabPanel(
           y = ~  value,
           color = ~  geography,
           colors = 
-            #Colors are assigned alphabetically in order of ADP, then 
-            #health board, then Scotland (and alphabetically within)
-            { print(c(
-            brewer.pal(12, "Paired"),
-            brewer.pal(9, "Set1"),
-            brewer.pal(12, "Set3"),
-            brewer.pal(8,"Accent"),
-            brewer.pal(4,"Dark2")[1:4],
-            "#0072B2","#1B9E77","#D95F02"
-          )) },
+            #We use 8 colours that are considered to be 
+            #blind friendly
+            c('#006ddb','#db6d00','#920000',
+              '#ffb6db','#490092','#6db6ff',
+              '#000000','#004949'
+              ),
        
           symbol = ~ geography_type,
           symbols = ~c(22,23,26),
