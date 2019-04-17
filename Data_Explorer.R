@@ -53,17 +53,17 @@ all_data<-all_data%>%
 
 
 #We will manually change the names of factors in R until we have an agreed 
-#terminology for the hospital type and clinical type. 
+#terminology for the hospital type and clinical type, as well age and sex. 
 
 all_data<-all_data %>% 
   mutate(hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"))
-
-all_data<-all_data %>% 
-  mutate(clinical_type= fct_recode(clinical_type, 
-                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"))
+                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"),
+         clinical_type= fct_recode(clinical_type, 
+                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
+         age_group = fct_recode(age_group, "All age groups" = "All"),
+         sex = fct_recode(sex, "Both" = "All"))
 
 #drop the hospital-clinical type columne
 all_data<-all_data %>% 
@@ -99,8 +99,8 @@ drug_type_by_hospital<-drug_type_by_hospital %>%
 #filter data set for data for each tab
 
 time_trend <- all_data %>% 
-  filter(age_group == "All",
-         sex == "All", 
+  filter(age_group == "All age groups",
+         sex == "Both", 
          simd == "All") %>% 
   select(-c(age_group,sex,simd))
 
@@ -108,7 +108,7 @@ age_sex <- all_data %>%
   filter(geography =="Scotland", 
          simd== "All"
          ) %>% 
-  select(-c(simd, geography_type,geography))
+  select(-c(simd, geography_type,geography)) 
 
 deprivation <- all_data %>% 
   filter(geography =="Scotland", 
@@ -148,12 +148,12 @@ SIMD<- as.character(unique(all_data$simd))
 #Convert males to negative (and remove all)
 age_sex_male <- age_sex %>%
   filter(sex == "Male"
-         & age_group != "All") %>%
+         & age_group != "All age groups") %>%
   mutate(value = value * -1)
 #Then remove females
 age_sex_female <- age_sex %>%
   filter(sex == "Female"
-         & age_group != "All")
+         & age_group != "All age groups")
 
 #recombine them into one chart
 age_sex_tornado <- rbind(age_sex_male, age_sex_female)
@@ -162,8 +162,8 @@ age_sex_tornado <- rbind(age_sex_male, age_sex_female)
 
 activity_summary<-all_data %>% 
   filter(drug_type == "All", 
-        age_group == "All",
-        sex == "All",
+        age_group == "All age groups",
+        sex == "Both",
         simd == "All", 
         measure == "Rate")
 
@@ -171,8 +171,8 @@ drug_summary<- all_data %>%
   filter(activity_type == "Stays",
          drug_type %in% drug_types2,
          drug_type != "All",
-         age_group == "All",
-         sex == "All",
+         age_group == "All age groups",
+         sex == "Both",
          simd == "All", 
          measure == "Rate")
 
@@ -180,9 +180,9 @@ drug_summary<- all_data %>%
 demographic_summary<- all_data  %>% 
   filter(drug_type == "All",
          activity_type =="Patients",
-         ((age_group != "All" & sex == "All" & simd =="All")|
-            (age_group == "All" & sex != "All" & simd =="All")|
-            (age_group == "All" & sex == "All" & simd !="All")), 
+         ((age_group != "All age groups" & sex == "Both" & simd =="All")|
+            (age_group == "All age groups" & sex != "Both" & simd =="All")|
+            (age_group == "All age groups" & sex == "Both" & simd !="All")), 
          measure == "Rate") 
 
 
@@ -432,29 +432,29 @@ tabsetPanel(
     
     tags$ul(
       tags$li(
-        tags$b("Download plot as a png"),
         icon("camera"),
+        tags$b("Download plot as a png"),
         " - click this button to save the graph as an image
         (please note that Internet Explorer does not support this
         function)."
       ),
       tags$li(
-        tags$b("Zoom"),
         icon("search"),
+        tags$b("Zoom"),
         " - zoom into the graph by clicking this button and then
         clicking and dragging your mouse over the area of the
         graph you are interested in."
       ),
       tags$li(
-        tags$b("Pan"),
         icon("move", lib = "glyphicon"),
+        tags$b("Pan"),
         " - adjust the axes of the graph by clicking this button
         and then clicking and moving your mouse in any direction
         you want."
       ),
       tags$li(
-        tags$b("Reset axes"),
         icon("home"),
+        tags$b("Reset axes"),
         " - click this button to return the axes to their
         default range."
       )
@@ -548,7 +548,8 @@ tabsetPanel(
       width = 12,
       plotlyOutput("geography_plot",
                    width = "1090px",
-                   height = "600px"),
+                   height = "500px"),
+      br(),
                   HTML("<button data-toggle = 'collapse' href = '#geography'
                    class = 'btn btn-primary' id = 'geography_link'> 
                           <strong> Show/hide table </strong></button>"),
@@ -600,29 +601,29 @@ tabsetPanel(
     
     tags$ul(
       tags$li(
-        tags$b("Download plot as a png"),
         icon("camera"),
+        tags$b("Download plot as a png"),
         " - click this button to save the graph as an image
         (please note that Internet Explorer does not support this
         function)."
       ),
       tags$li(
-        tags$b("Zoom"),
         icon("search"),
+        tags$b("Zoom"),
         " - zoom into the graph by clicking this button and then
         clicking and dragging your mouse over the area of the
         graph you are interested in."
       ),
       tags$li(
-        tags$b("Pan"),
         icon("move", lib = "glyphicon"),
+        tags$b("Pan"),
         " - adjust the axes of the graph by clicking this button
         and then clicking and moving your mouse in any direction
         you want."
       ),
       tags$li(
-        tags$b("Reset axes"),
         icon("home"),
+        tags$b("Reset axes"),
         " - click this button to return the axes to their
         default range."
       )
@@ -710,7 +711,8 @@ tabsetPanel(
       width = 12,
       plotlyOutput("substances_plot",
                    width = "1090px",
-                   height = "600px"), 
+                   height = "500px"), 
+      br(),
       HTML("<button data-toggle = 'collapse' href = '#substances'
                    class = 'btn btn-primary' id = 'substances_link'> 
                    <strong> Show/hide table </strong></button>"),
@@ -775,32 +777,32 @@ p(HTML("To view your data selection in a table, use the
   
   tags$ul(
     tags$li(
-      tags$b("Download plot as a png"),
       icon("camera"),
+      tags$b("Download plot as a png"),
       " - click this button to save the graph as an image
       (please note that Internet Explorer does not support this
       function)."
     ),
     
     tags$li(
-      tags$b("Zoom"),
       icon("search"),
+      tags$b("Zoom"),
       " - zoom into the graph by clicking this button and then
       clicking and dragging your mouse over the area of the
       graph you are interested in."
     ),
     
     tags$li(
-      tags$b("Pan"),
       icon("move", lib = "glyphicon"),
+      tags$b("Pan"),
       " - adjust the axes of the graph by clicking this button
       and then clicking and moving your mouse in any direction
       you want."
     ),
     
     tags$li(
-      tags$b("Reset axes"),
       icon("home"),
+      tags$b("Reset axes"),
       " - click this button to return the axes to their
       default range."
     )
@@ -878,7 +880,7 @@ p(HTML("To view your data selection in a table, use the
           label = "Select age group (multiple selection)",
           choices = age,
           multiple = TRUE,
-          selected = "All"
+          selected = "All age groups"
         ),
 
         tags$head(
@@ -897,7 +899,7 @@ p(HTML("To view your data selection in a table, use the
           label = "Select sex (multiple selection)",
           choices = sex,
           multiple = TRUE,
-          selected = "All"
+          selected = "Both"
         )
       ),
       column (4,
@@ -918,7 +920,8 @@ p(HTML("To view your data selection in a table, use the
       br(),
       plotlyOutput("age_sex_time_plot",
                    width = "1090px",
-                   height = "600px"),
+                   height = "500px"),
+      br(),
       HTML(
         "<button data-toggle = 'collapse' href = '#ageandsextrend'
         class = 'btn btn-primary' id = 'age_and_sex_link'>
@@ -983,7 +986,8 @@ p(HTML("To view your data selection in a table, use the
    
         plotlyOutput("age_sex_year_plot",
                      width = "1090px",
-                     height = "600px"),
+                     height = "500px"),
+      br(),
         HTML(
           "<button data-toggle = 'collapse' href = '#ageandsexyear'
               class = 'btn btn-primary' id = 'age_and_sex_link'>
@@ -1035,29 +1039,29 @@ tabPanel(
   
   tags$ul(
     tags$li(
-      tags$b("Download plot as a png"),
       icon("camera"),
+      tags$b("Download plot as a png"),
       " - click this button to save the graph as an image
       (please note that Internet Explorer does not support this
       function)."
     ),
     tags$li(
-      tags$b("Zoom"),
       icon("search"),
+      tags$b("Zoom"),
       " - zoom into the graph by clicking this button and then
       clicking and dragging your mouse over the area of the
       graph you are interested in."
     ),
     tags$li(
-      tags$b("Pan"),
       icon("move", lib = "glyphicon"),
+      tags$b("Pan"),
       " - adjust the axes of the graph by clicking this button
       and then clicking and moving your mouse in any direction
       you want."
     ),
     tags$li(
-      tags$b("Reset axes"),
       icon("home"),
+      tags$b("Reset axes"),
       " - click this button to return the axes to their
       default range."
     )
@@ -1148,7 +1152,8 @@ tabPanel(
     width =12,
     plotlyOutput("SIMD_plot",
                  width = "1090px",
-                 height = "600px"),
+                 height = "500px"),
+    br(),
     
     
     HTML(
@@ -1223,9 +1228,9 @@ tabPanel(
                      choices = c("Time trend (Data explorer)", 
                                  "Age/sex (Data explorer)", 
                                  "Deprivation (Data explorer)", 
-                                 "Activity summary (Data trend)",
-                                 "Drug summary (Data trend)",
-                                 "Demographic summary (Data trend)",
+                                 "Activity summary (Trend data)",
+                                 "Drug summary (Trend data)",
+                                 "Demographic summary (Trend data)",
                                  "Length of stay",
                                  "Emergency admissions",
                                  "Drug type by hospital"), 
@@ -1514,7 +1519,7 @@ tabPanel(
           mode = 'lines+markers',
           marker = list(size = 7),
           width = 1000,
-          height = 600
+          height = 500
         ) %>%
    
           #add in title to chart
@@ -1565,12 +1570,9 @@ tabPanel(
                  
                  xaxis = list(range = c(-1,22),
                               tickangle = -45,
-                              title = paste0(c(rep("&nbsp;", 20),
+                              title = paste0("<br>",
                                                "<br>",
-                                               "Financial year",
-                                               rep("&nbsp;", 20),
-                                               rep("\n&nbsp;", 3)),
-                                           collapse = ""),
+                                               "Financial year"),
                               showline = TRUE,
                               ticks = "outside"),
         
@@ -1579,7 +1581,7 @@ tabPanel(
                  #       #room to display nicely.
                  #      #Set the font sizes.
                  #
-                 margin = list(l = 90, r = 60, b = 150, t = 90),
+                 margin = list(l = 90, r = 60, b = 70, t = 90),
                  font = list(size = 13),
                  titlefont = list(size = 15),
                  
@@ -1845,7 +1847,7 @@ tabPanel(
           mode = 'lines+markers',
           marker = list(size = 7),
           width = 1000,
-          height = 600
+          height = 500
         ) %>%
           
           #add in title to chart
@@ -1895,12 +1897,9 @@ tabPanel(
             
             xaxis = list(range = c(-1,22),
                          tickangle = -45,
-                         title = paste0(c(rep("&nbsp;", 20),
-                                          "<br>",
-                                          "Financial year",
-                                          rep("&nbsp;", 20),
-                                          rep("\n&nbsp;", 3)),
-                                        collapse = ""),
+                         title = paste0("<br>",
+                                        "<br>",
+                                        "Financial year"),
                          showline = TRUE,
                          ticks = "outside"),
             
@@ -1908,7 +1907,7 @@ tabPanel(
             #       #room to display nicely.
             #      #Set the font sizes.
             #
-            margin = list(l = 90, r = 60, b = 150, t = 90),
+            margin = list(l = 90, r = 60, b = 70, t = 90),
             font = list(size = 13),
             titlefont = list(size = 15),
             
@@ -2129,9 +2128,9 @@ tabPanel(
             #type
             type = 'scatter',
             mode = 'lines+markers',
-            marker = list(size = 8),
+            marker = list(size = 7),
             width = 1000,
-            height = 600
+            height = 500
           ) %>%
             
             #Make the graph title reactive.
@@ -2177,12 +2176,11 @@ tabPanel(
                    
                    xaxis = list(range = c(-1,22),
                      tickangle = -45, 
-                                title = paste0(c(rep("&nbsp;", 20),
+                                title = paste0(
                                                  "<br>",
-                                                 "Financial year",
-                                                 rep("&nbsp;", 20),
-                                                 rep("\n&nbsp;", 3)),
-                                               collapse = ""),
+                                                 "<br>",
+                                                 "Financial year"
+                                                 ),
                                 showline = TRUE, 
                                 ticks = "outside"),
                    
@@ -2190,7 +2188,7 @@ tabPanel(
                    #room to display nicely.
                    #Set the font sizes.
                    
-                   margin = list(l = 90, r = 60, b = 150, t = 90),
+                   margin = list(l = 90, r = 60, b = 70, t = 90),
                    font = list(size = 13),
                    titlefont = list(size = 15),
                    
@@ -2568,7 +2566,7 @@ tabPanel(
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
             ) %>%
-            select(-measure, -hos_clin_type) %>%
+            select(-measure) %>%
             mutate(value = abs(value))
           
         })
@@ -2588,9 +2586,7 @@ tabPanel(
               "Age",
               "Sex",
               input$Measure3
-            ),
-            options = list(searching= FALSE,
-                           lengthChange= FALSE)
+            )
           )
         })
         
@@ -2733,7 +2729,7 @@ tabPanel(
             #type
             type = 'bar',
             width = 1000,
-            height = 600
+            height = 500
           ) %>%
             
             #Make the graph title reactive.
@@ -2776,13 +2772,10 @@ tabPanel(
                    #Wrap the x axis title in blank spaces so that it doesn't...
                    #overlap with the x axis tick labels.
                    
-                   xaxis = list(tickangle = -45, 
-                                title = paste0(c(rep("&nbsp;", 20),
-                                                 "<br>", 
-                                                 "Deprivation Quintile",
-                                                 rep("&nbsp;", 20),
-                                                 rep("\n&nbsp;", 3)),
-                                               collapse = ""),
+                   xaxis = list( 
+                                title = paste0("<br>",
+                                               "<br>",
+                                               "Deprivation quintile"),
                                 showline = TRUE, 
                                 ticks = "outside"),
                    
@@ -2790,7 +2783,7 @@ tabPanel(
                    #room to display nicely.
                    #Set the font sizes.
                    
-                   margin = list(l = 90, r = 60, b = 120, t = 90),
+                   margin = list(l = 90, r = 60, b = 70, t = 90),
                    font = list(size = 13),
                    titlefont = list(size = 15),
                    
@@ -2885,7 +2878,7 @@ tabPanel(
                           "Location" = geography, 
                           "Drug type" = drug_type,
                           "Measure" = measure,
-                          "Number" = value) ,
+                          "Value" = value) ,
                  "Age/sex (Data explorer)" = age_sex %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
@@ -2895,7 +2888,7 @@ tabPanel(
                           "Age group" = age_group,
                           "Sex" = sex,
                           "Measure" = measure,
-                          "Number" = value),
+                          "Value" = value),
                  "Deprivation (Data explorer)" = deprivation %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
@@ -2904,7 +2897,7 @@ tabPanel(
                           "Drug type" = drug_type,
                           "Deprivation" = simd,
                           "Measure" = measure,
-                          "Number" = value),
+                          "Value" = value),
                  "Activity summary (Trend data)" = activity_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
@@ -2942,8 +2935,8 @@ tabPanel(
                           "Sex" = sex,
                           "Deprivation index" = simd,
                           "Number of stays" = total, 
-                          "<1 week %" = perc_less_1week,
-                          ">1 week %" = perc_more_1week,
+                          "<1 week (%)" = perc_less_1week,
+                          ">1 week (%)" = perc_more_1week,
                           "Median length of stay" = med_los
                    ),
                  "Emergency admissions" = emergency_admissions %>% 
@@ -2957,8 +2950,8 @@ tabPanel(
                           "Sex" = sex,
                           "Deprivation index" = simd,
                           "Number of stays" = total,
-                          "Emergency admissions %" = perc_adm_emer,
-                          "Non-emergency admissions %" = perc_adm_other
+                          "Emergency admissions (%)" = perc_adm_emer,
+                          "Non-emergency admissions (%)" = perc_adm_other
                           
                      
                    ),
@@ -2968,9 +2961,9 @@ tabPanel(
                           "Clinical type" = clinical_type,
                           "Activity type" = activity_type, 
                           "Drug type" = drug_type,
-                          "SMR01 %" = perc_source01,
-                          "SMR04 %" = perc_source04,
-                          "SMR01 and SMR04 %" = perc_sourceBOTH, 
+                          "SMR01 (%)" = perc_source01,
+                          "SMR04 (%)" = perc_source04,
+                          "SMR01 and SMR04 (%)" = perc_sourceBOTH, 
                           "Number" = total
                    )
                  
