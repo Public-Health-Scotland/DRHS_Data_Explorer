@@ -1550,13 +1550,23 @@ tabPanel(
                                (max(geography_new()$value, na.rm = TRUE)
                                 * 10 / 100)),
                    
-                   title = paste0(c(
-                     rep("&nbsp;", 20),
-                     input$Measure,
-                     rep("&nbsp;", 20),
-                     rep("\n&nbsp;", 3)
-                   ),
-                   collapse = ""),
+                   title = 
+                     ifelse(input$Measure == "Rate",
+                            paste0(c(
+                              rep("&nbsp;", 20),
+                              "EASR per 100,000 population",
+                              rep("&nbsp;", 20),
+                              rep("\n&nbsp;", 3)
+                            ),
+                            collapse = ""),
+                            paste0(c(
+                              rep("&nbsp;", 20),
+                              input$Measure,
+                              rep("&nbsp;", 20),
+                              rep("\n&nbsp;", 3)
+                            ),
+                            collapse = "")
+                     ),
                    showline = TRUE,
                    ticks = "outside"
                    
@@ -1877,13 +1887,22 @@ tabPanel(
                           (max(substances_new()$value, na.rm = TRUE)
                            * 10 / 100)),
               
-              title = paste0(c(
-                rep("&nbsp;", 20),
-                input$Measure2,
-                rep("&nbsp;", 20),
-                rep("\n&nbsp;", 3)
+              title = ifelse(input$Measure2 == "Rate",
+                             paste0(c(
+                               rep("&nbsp;", 20),
+                               "EASR per 100,000 population",
+                               rep("&nbsp;", 20),
+                               rep("\n&nbsp;", 3)
+                             ),
+                             collapse = ""),
+                             paste0(c(
+                               rep("&nbsp;", 20),
+                               input$Measure2,
+                               rep("&nbsp;", 20),
+                               rep("\n&nbsp;", 3)
+                             ),
+                             collapse = "")
               ),
-              collapse = ""),
               showline = TRUE,
               ticks = "outside"
               
@@ -2162,7 +2181,22 @@ tabPanel(
                                  (max(age_sex_time_new()$value, na.rm = TRUE) 
                                   * 10 / 100)), 
                      
-                     title = input$Measure3,
+                     title = ifelse(input$Measure3 == "Rate",
+                                    paste0(c(
+                                      rep("&nbsp;", 20),
+                                      "EASR per 100,000 population",
+                                      rep("&nbsp;", 20),
+                                      rep("\n&nbsp;", 3)
+                                    ),
+                                    collapse = ""),
+                                    paste0(c(
+                                      rep("&nbsp;", 20),
+                                      input$Measure3,
+                                      rep("&nbsp;", 20),
+                                      rep("\n&nbsp;", 3)
+                                    ),
+                                    collapse = "")
+                     ),
                      showline = TRUE, 
                      ticks = "outside"
                      
@@ -2502,7 +2536,10 @@ tabPanel(
                 
                 #Make the x axis title reactive.
                 
-                title =  input$Measure3,
+                title =  ifelse(input$Measure3 == "Rate",
+                                  "EASR per 100,000 population",
+                                  input$Measure3
+                ),
                 
                 showline = TRUE,
                 ticks = "outside"
@@ -2760,7 +2797,22 @@ tabPanel(
                                  (max(SIMD_new()$value, na.rm = TRUE) 
                                   * 10 / 100)), 
                      
-                     title = input$Measure4,
+                     title = ifelse(input$Measure4 == "Rate",
+                                    paste0(c(
+                                      rep("&nbsp;", 20),
+                                      "EASR per 100,000 population",
+                                      rep("&nbsp;", 20),
+                                      rep("\n&nbsp;", 3)
+                                    ),
+                                    collapse = ""),
+                                    paste0(c(
+                                      rep("&nbsp;", 20),
+                                      input$Measure4,
+                                      rep("&nbsp;", 20),
+                                      rep("\n&nbsp;", 3)
+                                    ),
+                                    collapse = "")
+                     ),
                      showline = TRUE, 
                      ticks = "outside"
                      
