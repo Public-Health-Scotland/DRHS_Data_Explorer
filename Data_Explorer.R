@@ -1524,7 +1524,7 @@ tabPanel(
                                           input$Substances,
                                           " by location"))),"<b>")),
             
-                 separators = ".",
+                 separators = ".,",
           
           #y=axis formatting       
            yaxis = list(
@@ -1861,7 +1861,7 @@ tabPanel(
                                                    " due to ", 
                                                    input$Location2,
                                                    " by drug type"))),"<b>")),
-            separators = ".",
+            separators = ".,",
             
             #y=axis formatting       
             yaxis = list(
@@ -2147,7 +2147,7 @@ tabPanel(
                             " for ", input$Substances3,
                             " Drug Types By Age Group And Sex","<b>"),
                    
-                   separators = ".",
+                   separators = ".,",
                    
                    #We need to fix the range of the y axis, as R refuses to set...
                    #the lower end of this axis to zero.
@@ -2492,7 +2492,8 @@ tabPanel(
                   )),
                   ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))
                 ),
-                ticktext = paste0(as.character(
+                ticktext = paste0(
+                  formatC(
                   c(
                     round(max(abs(
                       age_sex_year_new_axis()$value
@@ -2517,7 +2518,9 @@ tabPanel(
                     ((-nchar(as.integer(max(abs(age_sex_year_new_axis()$value)))))+1))
                
                     )
-                  ))
+                  ,
+                  big.mark=",")
+                  )
                   
                 ,
                 
@@ -2763,7 +2766,7 @@ tabPanel(
                             str_sub(input$Activity_Type4,1,-2), " ",input$Measure4,
                             " By ", input$Substances4,"<b>"),
                    
-                   separators = ".",
+                   separators = ".,",
                    
                    #We need to fix the range of the y axis, as R refuses to set...
                    #the lower end of this axis to zero.
