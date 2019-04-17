@@ -65,36 +65,23 @@ all_data<-all_data %>%
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both" = "All"))
 
-#drop the hospital-clinical type columne
-all_data<-all_data %>% 
-  select(-hos_clin_type)
-
-
-
 #Data that is not visualized  
 length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY_ROUNDED.rds"))
 length_of_stay<-length_of_stay %>% 
   rename("perc_less_1week" = perc_less_1week_round, 
          "perc_more_1week" = perc_more_1week_round,
-         "total" = total_rounded)%>% 
-  select(-hos_clin_type)
-
-
+         "total" = total_rounded)
 
 emergency_admissions<- readRDS(paste0(path,"s08-temp08_emerAdm_R-SHINY_ROUNDED.rds"))
 emergency_admissions <-emergency_admissions %>% 
   rename("perc_adm_emer" = perc_adm_emer_round, 
          "perc_adm_other" = perc_adm_other_round,
-         "total" = total_rounded) %>% 
-  select(-hos_clin_type)
-
-
+         "total" = total_rounded) 
 
 drug_type_by_hospital<-readRDS (paste0(path,"s09-temp05_dist_hospit_R-SHINY_ROUNDED.rds"))
 
 drug_type_by_hospital<-drug_type_by_hospital %>% 
-  rename("total" = total_rounded) %>% 
-  select(-hos_clin_type)
+  rename("total" = total_rounded) 
 
 #filter data set for data for each tab
 
