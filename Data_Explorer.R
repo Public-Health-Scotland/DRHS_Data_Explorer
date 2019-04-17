@@ -666,7 +666,6 @@ tabsetPanel(
           inputId = "Location2",
           label = "Select location",
           choices = geography_list,
-          multiple = TRUE,
           selected = "Scotland",
           options = list(size=10, 
                          `live-search`=TRUE)
@@ -949,8 +948,10 @@ p(HTML("To view your data selection in a table, use the
           choices = financial_years,
           selected = "2017/18",
           grid = T,
-          animate = animationOptions(playButton =icon('play', "fa-3x"),
-                                     pauseButton = icon('pause', "fa-3x")),
+          animate = animationOptions(playButton =icon('play', 
+                                                      "fa fa-play-circle fa-2x"),
+                                     pauseButton = icon('pause', 
+                                                        "fa fa-pause-circle fa-2x")),
           width = "1090px"
           
         )
@@ -1354,7 +1355,7 @@ tabPanel(
           )%>%
           select(year, hospital_type, clinical_type, activity_type,
                  geography_type, geography, drug_type,value) %>% 
-          droplevels()
+          droplevels(except= c(1,5))
       })
       
       #then we can plot the actual graph, with labels
@@ -1482,7 +1483,7 @@ tabPanel(
           "Drug type: ",
           geography_new()$drug_type,
           "<br>",
-          geography_new()$measure,": ",
+          input$Measure,": ",
           geography_new()$value
         )
         
@@ -1503,7 +1504,7 @@ tabPanel(
               ),
        
           symbol = ~ geography_type,
-          symbols = ~c(22,23,26),
+          symbols = ~c(17,15,16),
           name = ~  str_wrap(geography,10),
           #tooltip
           text = tooltip_geography,
@@ -1511,7 +1512,7 @@ tabPanel(
           #type
           type = 'scatter',
           mode = 'lines+markers',
-          marker = list(size = 10),
+          marker = list(size = 7),
           width = 1000,
           height = 600
         ) %>%
@@ -1816,7 +1817,7 @@ tabPanel(
                   "Drug type: ",
                   substances_new()$drug_type,
                   "<br>",
-                  substances_new()$measure,": ",
+                  input$Measure2,": ",
                   substances_new()$value
                 )
         
@@ -1842,7 +1843,7 @@ tabPanel(
           #type
           type = 'scatter',
           mode = 'lines+markers',
-          marker = list(size = 8),
+          marker = list(size = 7),
           width = 1000,
           height = 600
         ) %>%
@@ -2904,7 +2905,7 @@ tabPanel(
                           "Deprivation" = simd,
                           "Measure" = measure,
                           "Number" = value),
-                 "Activity summary (Data trend)" = activity_summary %>% 
+                 "Activity summary (Trend data)" = activity_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
                         "Clinical type" = clinical_type,
@@ -2912,7 +2913,7 @@ tabPanel(
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Rate" = value),
-                 "Drug summary (Data trend)" = drug_summary %>% 
+                 "Drug summary (Trend data)" = drug_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
                         "Clinical type" = clinical_type,
@@ -2920,7 +2921,7 @@ tabPanel(
                         "Location" = geography, 
                         "Drug type" = drug_type,
                         "Rate" = value),
-                 "Demographic summary (Data trend)" = demographic_summary %>% 
+                 "Demographic summary (Trend data)" = demographic_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
                         "Clinical type" = clinical_type,
