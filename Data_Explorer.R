@@ -193,12 +193,16 @@ demographic_summary<-demographic_summary %>%
 length_of_stay <- length_of_stay %>% 
   select(-activity_type)%>% 
   mutate(perc_less_1week = round(perc_less_1week, 2), 
-         perc_more_1week = round(perc_more_1week, 2))
+         perc_more_1week = round(perc_more_1week, 2),
+         age_group = fct_recode(age_group, "All age groups" = "All"),
+         sex = fct_recode(sex, "Both" = "All"))
 
 emergency_admissions <- emergency_admissions %>% 
   select(-activity_type)%>% 
   mutate(perc_adm_emer = round(perc_adm_emer, 2), 
-         perc_adm_other = round(perc_adm_other, 2))
+         perc_adm_other = round(perc_adm_other, 2),
+         age_group = fct_recode(age_group, "All age groups" = "All"),
+         sex = fct_recode(sex, "Both" = "All"))
 
 drug_type_by_hospital <- drug_type_by_hospital %>% 
   select(-c(geography_type,geography,
@@ -855,6 +859,13 @@ p(HTML("To view your data selection in a table, use the
     type = "pills",
     tabPanel(
       "Time Trend",
+      tags$style(
+        HTML("
+           .tabbable > .nav > li > a[data-value = 'Bar Chart'] {background-color: #D3D3D3; color: #000000;}
+           .tabbable > .nav > li > a[data-value = 'Time Trend'] {background-color: #D3D3D3; color: #000000;}
+           .tabbable > .nav > li[class = active] > a {background-color: #0072B2;color: #FFFFFF;} 
+           ") 
+      ),
       icon = icon("line-chart"),
       style = "height: 95%; width: 95%; background-color: #FFFFFF;
       border: 0px solid #FFFFFF;",
