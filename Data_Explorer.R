@@ -39,8 +39,6 @@ path<- "\\\\nssstats01\\SubstanceMisuse1\\Topics\\DrugRelatedHospitalStats\\Publ
 
 
 #Data to be used for explorer and trend pages
-
-
 #Following is rounded data
 all_data<- readRDS(paste0(path,"s06-temp09_num_rate_perc_R-SHINY_rounded.rds"))
 #need to rename the final column as value
@@ -63,7 +61,8 @@ all_data<-all_data %>%
          clinical_type= fct_recode(clinical_type, 
                                    "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
-         sex = fct_recode(sex, "Both" = "All"))
+         sex = fct_recode(sex, "Both sexes" = "All"))
+
 
 #Data that is not visualized  
 length_of_stay <- readRDS(paste0(path,"s07-temp08_lsty_R-SHINY_ROUNDED.rds"))
@@ -87,7 +86,7 @@ drug_type_by_hospital<-drug_type_by_hospital %>%
 
 time_trend <- all_data %>% 
   filter(age_group == "All age groups",
-         sex == "Both", 
+         sex == "Both sexes", 
          simd == "All") %>% 
   select(-c(age_group,sex,simd))
 
@@ -150,7 +149,7 @@ age_sex_tornado <- rbind(age_sex_male, age_sex_female)
 activity_summary<-all_data %>% 
   filter(drug_type == "All", 
         age_group == "All age groups",
-        sex == "Both",
+        sex == "Both sexes",
         simd == "All", 
         measure == "Rate")
 
@@ -159,7 +158,7 @@ drug_summary<- all_data %>%
          drug_type %in% drug_types2,
          drug_type != "All",
          age_group == "All age groups",
-         sex == "Both",
+         sex == "Both sexes",
          simd == "All", 
          measure == "Rate")
 
@@ -167,9 +166,9 @@ drug_summary<- all_data %>%
 demographic_summary<- all_data  %>% 
   filter(drug_type == "All",
          activity_type =="Patients",
-         ((age_group != "All age groups" & sex == "Both" & simd =="All")|
-            (age_group == "All age groups" & sex != "Both" & simd =="All")|
-            (age_group == "All age groups" & sex == "Both" & simd !="All")), 
+         ((age_group != "All age groups" & sex == "Both sexes" & simd =="All")|
+            (age_group == "All age groups" & sex != "Both sexes" & simd =="All")|
+            (age_group == "All age groups" & sex == "Both sexes" & simd !="All")), 
          measure == "Rate") 
 
 
@@ -194,15 +193,31 @@ length_of_stay <- length_of_stay %>%
   select(-activity_type)%>% 
   mutate(perc_less_1week = round(perc_less_1week, 2), 
          perc_more_1week = round(perc_more_1week, 2),
+         hospital_type= fct_recode(hospital_type, 
+                                   "General acute"= "General acute (SMR01)",
+                                   "Psychiatric" ="Psychiatric (SMR04)",
+                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"),
+         clinical_type= fct_recode(clinical_type, 
+                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
+         drug_type = fct_recode (drug_type, 
+                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
-         sex = fct_recode(sex, "Both" = "All"))
+         sex = fct_recode(sex, "Both sexes" = "All"))
 
 emergency_admissions <- emergency_admissions %>% 
   select(-activity_type)%>% 
   mutate(perc_adm_emer = round(perc_adm_emer, 2), 
          perc_adm_other = round(perc_adm_other, 2),
+         hospital_type= fct_recode(hospital_type, 
+                                   "General acute"= "General acute (SMR01)",
+                                   "Psychiatric" ="Psychiatric (SMR04)",
+                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"),
+         clinical_type= fct_recode(clinical_type, 
+                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
+         drug_type = fct_recode (drug_type, 
+                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
-         sex = fct_recode(sex, "Both" = "All"))
+         sex = fct_recode(sex, "Both sexes" = "All"))
 
 drug_type_by_hospital <- drug_type_by_hospital %>% 
   select(-c(geography_type,geography,
@@ -897,7 +912,7 @@ p(HTML("To view your data selection in a table, use the
           label = "Select sex (multiple selection)",
           choices = sex,
           multiple = TRUE,
-          selected = "Both"
+          selected = "Both sexes"
         )
       ),
       column (4,
@@ -1537,6 +1552,16 @@ tabPanel(
             
                  separators = ".,",
           
+          annotations = 
+            list(x = 0.99, y = -0.27, 
+                 text = paste0("Source: Drug-Related","<br>",
+                               "Hospital Statistics,","<br>",
+                               "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                 showarrow = F, xref='paper', yref='paper', 
+                 xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                 font=list(family = "arial", size=12, color="#7f7f7f")),
+          
+          
           #y=axis formatting       
            yaxis = list(
                                       
@@ -1873,6 +1898,14 @@ tabPanel(
                                                    input$Location2,
                                                    " by drug type"))),"<b>")),
             separators = ".,",
+            annotations = 
+              list(x = 0.96, y = -0.27, 
+                   text = paste0("Source: Drug-Related","<br>",
+                                 "Hospital Statistics,","<br>",
+                                 "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                   showarrow = F, xref='paper', yref='paper', 
+                   xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                   font=list(family = "arial", size=12, color="#7f7f7f")),
             
             #y=axis formatting       
             yaxis = list(
@@ -2159,6 +2192,14 @@ tabPanel(
                             " Drug Types By Age Group And Sex","<b>"),
                    
                    separators = ".,",
+                   annotations = 
+                     list(x = 0.98, y = -0.27, 
+                          text = paste0("Source: Drug-Related","<br>",
+                                        "Hospital Statistics,","<br>",
+                                        "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                          showarrow = F, xref='paper', yref='paper', 
+                          xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                          font=list(family = "arial", size=12, color="#7f7f7f")),
                    
                    #We need to fix the range of the y axis, as R refuses to set...
                    #the lower end of this axis to zero.
@@ -2546,6 +2587,14 @@ tabPanel(
                 ticks = "outside"
                 
               ),
+              annotations = 
+                list(x = 0.99, y = -0.21, 
+                     text = paste0("Source: Drug-Related","<br>",
+                                   "Hospital Statistics,","<br>",
+                                   "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                     showarrow = F, xref='paper', yref='paper', 
+                     xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                     font=list(family = "arial", size=12, color="#7f7f7f")),
       
               #Fix the margins so that the graph and axis titles have...
               #enough room to display nicely.
@@ -2778,13 +2827,14 @@ tabPanel(
                             " By ", input$Substances4,"<b>"),
                    
                    separators = ".,",
-                   
-                   #We need to fix the range of the y axis, as R refuses to set...
-                   #the lower end of this axis to zero.
-                   #The following "range" command fixes the lower end to...
-                   #zero, and calculates the upper end as the maximum...
-                   #number visualised in the graph + 10% of this number.
-                   #Also, wrap the y axis title in blank spaces so it doesn't...
+                   annotations = 
+                     list(x = 0.92, y = -0.21, 
+                          text = paste0("Source: Drug-Related","<br>",
+                                        "Hospital Statistics,","<br>",
+                                        "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                          showarrow = F, xref='paper', yref='paper', 
+                          xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                          font=list(family = "arial", size=12, color="#7f7f7f")),    #Also, wrap the y axis title in blank spaces so it doesn't...
                    #overlap with the y axis tick labels.
                    #Finally, make the y axis title reactive.
                    
