@@ -1542,16 +1542,21 @@ tabPanel(
           
           layout(
             #Title
-          title = (paste0("<b>",
-            (str_to_sentence(paste0(str_sub(input$Activity_Type,1,-2),
-                                          " ", input$Measure,  " for ",
-                                          input$Hospital_Type,
-                                          " hospitals as result of ", 
-                                          input$Clinical_Type,
-                                          " due to ", 
-                                          input$Substances,
-                                          " by location"))),"<b>")),
+          title = (paste0("<b>",paste0(str_sub(input$Activity_Type,1,-2),
+                                          " ", 
+                                       str_to_lower(input$Measure),
+                                       " for ",
+                                       str_to_lower(input$Hospital_Type),
+                                       " hospitals with","<br>", "clinical type ",
+                                      str_to_lower(str_sub(input$Clinical_Type,start = 1,end = 1)),
+                                       str_sub(input$Clinical_Type,start = 2),
+                                       " due to","<br>", "drug type ", 
+                                       str_to_lower(input$Substances),
+                                       " by location"),"<b>")),
             
+
+          
+          
                  separators = ".,",
           
           annotations = 
@@ -1890,15 +1895,18 @@ tabPanel(
           
           layout(
             #Title
-            title =(paste0("<b>",
-                           (str_to_sentence(paste0(str_sub(input$Activity_Type2,1,-2),
-                                                   " ", input$Measure2,  " for ",
-                                                   input$Hospital_Type2,
-                                                   " hospitals as result of ", 
-                                                   input$Clinical_Type2,
-                                                   " due to ", 
-                                                   input$Location2,
-                                                   " by drug type"))),"<b>")),
+            title = (paste0("<b>",paste0(str_sub(input$Activity_Type2,1,-2),
+                                         " ", 
+                                         str_to_lower(input$Measure2),
+                                         " for ",
+                                         str_to_lower(input$Hospital_Type2),
+                                         " hospitals with","<br>", "clinical type ",
+                                         str_to_lower(str_sub(input$Clinical_Type2,start = 1,end = 1)),
+                                         str_sub(input$Clinical_Type2,start = 2),
+                                         " in","<br>", 
+                                         input$Location2,
+                                         " by drug type"),"<b>")),
+ 
             separators = ".,",
             annotations = 
               list(x = 0.96, y = -0.27, 
@@ -2169,7 +2177,7 @@ tabPanel(
             colors = #Colors are assigned 
             c('#b66dff','#db6d00','#920000','#006ddb',
               '#490092','#6db6ff',
-              '#004949', '#000000'
+              '#b6dbff', '#000000'
             ),
             #so we will use different linetypes to
             #distinguish between sex.
@@ -2187,12 +2195,19 @@ tabPanel(
             
             #Make the graph title reactive.
             
-            layout(title = 
-                     paste0("<b>",input$Hospital_Clinic_Type3,  " "  ,
-                            str_sub(input$Activity_Type3,1,-2) , " ",input$Measure3,
-                            " for ", input$Substances3,
-                            " Drug Types By Age Group And Sex","<b>"),
+            layout(title = (paste0("<b>",paste0(str_sub(input$Activity_Type3,1,-2),
+                                                " ", 
+                                                str_to_lower(input$Measure3),
+                                                " for ",
+                                                str_to_lower(input$Hospital_Type3),
+                                                " hospitals with","<br>", "clinical type ",
+                                                str_to_lower(str_sub(input$Clinical_Type3,start = 1,end = 1)),
+                                                str_sub(input$Clinical_Type3,start = 2),
+                                                " by drug type ",
+                                                str_to_lower(input$Substances3),"<br>",
+                                                " by age group and sex in Scotland"),"<b>")),
                    
+
                    separators = ".,",
                    annotations = 
                      list(x = 0.98, y = -0.27, 
@@ -2417,7 +2432,7 @@ tabPanel(
               y = 2,
               font = list(color = "#0072B2", size = 20),
               text = 
-                "Data is not available for new patients before 
+                "Data are not available for new patients before 
               2006/07", 
               xref = "x", 
               yref = "y",  
@@ -2481,19 +2496,19 @@ tabPanel(
             height = 500
           ) %>%
             
-            layout(
-              title = paste0(
-                "<b>",
-                input$Activity_Type3,
-                " in Financial Year ",
-                input$Financial_Year,
-                ",",
-                "<br>",
-                "For ",
-                input$Substances3,
-                " Drug Types By Age Group And Sex",
-                "</b>"
-              ),
+            layout(title = (paste0("<b>",paste0(str_sub(input$Activity_Type3,1,-2),
+                                           " ", 
+                                           str_to_lower(input$Measure3),
+                                           " for ",
+                                           str_to_lower(input$Hospital_Type3),
+                                           " hospitals with","<br>", "clinical type ",
+                                           str_to_lower(str_sub(input$Clinical_Type3,start = 1,end = 1)),
+                                           str_sub(input$Clinical_Type3,start = 2),
+                                           " by drug type ",
+                                           str_to_lower(input$Substances3),"<br>",
+                                           " by age group and sex in Scotland for ",
+                                           input$Financial_Year),"<b>")),
+              
               
               bargap = 0.2,
               barmode = "overlay",
@@ -2767,7 +2782,7 @@ tabPanel(
               y = 2,
               font = list(color = "#0072B2", size = 20),
               text = 
-                "Data is not available for new patients before 
+                "Data are not available for new patients before 
               2006/07", 
               xref = "x", 
               yref = "y",  
@@ -2823,10 +2838,21 @@ tabPanel(
             
             #Make the graph title reactive.
             
-            layout(title = 
-                     paste0("<b>",input$Hospital_Clinic_Type4,  " "  ,
-                            str_sub(input$Activity_Type4,1,-2), " ",input$Measure4,
-                            " By ", input$Substances4,"<b>"),
+            layout(title = (paste0("<b>",paste0(str_sub(input$Activity_Type4,1,-2),
+                                    " ", 
+                                    str_to_lower(input$Measure4),
+                                    " for ",
+                                    str_to_lower(input$Hospital_Type4),
+                                    " hospitals with","<br>", "clinical type ",
+                                    str_to_lower(str_sub(input$Clinical_Type4,start = 1,end = 1)),
+                                    str_sub(input$Clinical_Type4,start = 2),
+                                    " by drug type ",
+                                    str_to_lower(input$Substances4),"<br>",
+                                    " by deprivation quintile in Scotland for ",
+                                    input$Financial_Year2),"<b>")),
+                   
+                   
+                   
                    
                    separators = ".,",
                    annotations = 
