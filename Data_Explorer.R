@@ -198,9 +198,11 @@ length_of_stay <- length_of_stay %>%
          hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
+                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Overdose (OD)" = "Overdose",
+                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
          drug_type = fct_recode (drug_type, 
                                  "Sedatives/ Hypnotics" = "Sedatives/Hypnotics"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
@@ -213,10 +215,12 @@ emergency_admissions <- emergency_admissions %>%
          hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
-         drug_type = fct_recode (drug_type, 
+                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Overdose (OD)" = "Overdose",
+                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+                 drug_type = fct_recode (drug_type, 
                                  "Sedatives/ Hypnotics" = "Sedatives/Hypnotics"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both sexes" = "All"))
@@ -226,7 +230,13 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
              age_group,sex,simd))%>% 
   mutate(perc_source01 = round(perc_source01, 2), 
          perc_source04 = round(perc_source04, 2), 
-         perc_sourceBOTH = round(perc_sourceBOTH, 2))
+         perc_sourceBOTH = round(perc_sourceBOTH, 2),
+         hospital_type= fct_recode(hospital_type, 
+                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
+         clinical_type= fct_recode(clinical_type, 
+                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Overdose (OD)" = "Overdose",
+                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"))
 
 
 ##############################################.
