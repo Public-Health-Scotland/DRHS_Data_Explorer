@@ -57,9 +57,11 @@ all_data<-all_data %>%
   mutate(hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen.acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Combined men.&beh./over." = "Combined (Mental and Behavioural/Overdose)"),
+                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Overdose (OD)" = "Overdose",
+                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both sexes" = "All"))
 
@@ -375,13 +377,13 @@ tabsetPanel(
       ),
       
       
-       downloadButton(outputId = "download_glossary_one", 
-                      label = "Download glossary", 
-                      class = "glossaryone"),
-       tags$head(
-         tags$style(".glossaryone { background-color: #0072B2; } 
-                    .glossaryone { color: #FFFFFF; }")
-         ),
+      downloadButton(outputId = "download_glossary", 
+                     label = "Download glossary", 
+                     class = "glossary"),
+      tags$head(
+        tags$style(".glossary { background-color: #0072B2; } 
+                   .glossary { color: #FFFFFF; }")
+        ),
       
       p(
         br(),
@@ -1349,7 +1351,7 @@ tabPanel(
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
                                   label = "Select drug type",  
-                                  choices = (if(input$Clinical_Type == "Overdose")
+                                  choices = (if(input$Clinical_Type == "Overdose (OD)")
                                     drug_types1
                                     else
                                       drug_types2), 
@@ -1695,7 +1697,7 @@ tabPanel(
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
                                   label = "Select drug type (multiple selection)",  
-                                  choices = (if(input$Clinical_Type2 == "Overdose")
+                                  choices = (if(input$Clinical_Type2 == "Overdose (OD)")
                                   drug_types1
                                   else
                                   drug_types2),
@@ -2033,7 +2035,7 @@ tabPanel(
           shinyWidgets::pickerInput(
             inputId = "Substances3",
             label = "Select drug type",
-            choices = (if (input$Clinical_Type3 == "Overdose")
+            choices = (if (input$Clinical_Type3 == "Overdose (OD)")
               drug_types1
               else
                 drug_types2),
@@ -2722,7 +2724,7 @@ tabPanel(
           shinyWidgets::pickerInput(
             inputId = "Substances4",
             label = "Select drug type",
-            choices = (if (input$Clinical_Type4 == "Overdose")
+            choices = (if (input$Clinical_Type4 == "Overdose (OD)")
               drug_types1
               else
                 drug_types2),
@@ -3111,6 +3113,15 @@ tabPanel(
           } 
         )
         
+        
+        #glossary link for introduction page
+        
+        output$download_glossary <- downloadHandler(
+          filename = 'glossary.pdf',
+          content = function(file) {
+            file.copy(paste0(path, "www\\glossary.pdf"), file)
+          }
+        )
       
       #End of server
     }
