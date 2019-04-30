@@ -1504,7 +1504,7 @@ tabPanel(
           geography_new()$drug_type,
           "<br>",
           input$Measure,": ",
-          geography_new()$value
+          formatC(geography_new()$value, big.mark = ",")
         )
         
         #Create the main body of the chart.
@@ -1855,9 +1855,9 @@ tabPanel(
                   substances_new()$drug_type,
                   "<br>",
                   input$Measure2,": ",
-                  substances_new()$value
+                  formatC(substances_new()$value, big.mark = ",")
                 )
-        
+                
         #Create the main body of the chart.
         
         plot_ly(
@@ -2157,7 +2157,7 @@ tabPanel(
             "<br>",
             input$Measure3,
             ": ",
-            abs(age_sex_time_new()$value)
+            formatC(abs(age_sex_time_new()$value), big.mark = ",")
           )
           
           plot_ly(
@@ -2454,7 +2454,7 @@ tabPanel(
             "<br>",
             input$Measure3,
             ": ",
-            abs(age_sex_year_new()$value)
+            formatC(abs(age_sex_year_new()$value), big.mark = ",")
           )
           
           plot_ly(
@@ -2804,7 +2804,7 @@ tabPanel(
             "<br>",
             input$Measure4,
             ": ",
-            SIMD_new()$value
+            formatC(SIMD_new()$value, big.mark = ",")
           )
           
           plot_ly(
