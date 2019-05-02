@@ -57,9 +57,9 @@ all_data<-all_data %>%
   mutate(hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
@@ -198,9 +198,9 @@ length_of_stay <- length_of_stay %>%
          hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
          drug_type = fct_recode (drug_type, 
@@ -215,9 +215,9 @@ emergency_admissions <- emergency_admissions %>%
          hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
                  drug_type = fct_recode (drug_type, 
@@ -232,9 +232,9 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
          perc_source04 = round(perc_source04, 2), 
          perc_sourceBOTH = round(perc_sourceBOTH, 2),
          hospital_type= fct_recode(hospital_type, 
-                                   "Combined gen acute/psych." = "Combined (General acute/Psychiatric)"),
+                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental and behavioural (M&B)" = "Mental and Behavioural",
+                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"))
 
@@ -2866,7 +2866,7 @@ tabPanel(
                    
                    separators = ".,",
                    annotations = 
-                     list(x = 0.92, y = -0.21, 
+                     list(x = 0.97, y = -0.21, 
                           text = paste0("Source: Drug-Related","<br>",
                                         "Hospital Statistics,","<br>",
                                         "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
@@ -2924,7 +2924,7 @@ tabPanel(
                    #room to display nicely.
                    #Set the font sizes.
                    
-                   margin = list(l = 90, r = 60, b = 70, t = 90),
+                   margin = list(l = 90, r = 100, b = 70, t = 90),
                    font = list(size = 13),
                    titlefont = list(size = 15),
                    
@@ -2935,10 +2935,8 @@ tabPanel(
                    ##REMOVE LEGEND FOR NOW- until we have discussed whether 
                    #to have multiple options for any categories
                    showlegend = FALSE,
-                   legend = list(orientation = 'h',
-                                 x = 0, 
-                                 y = -0.5,
-                                 bgcolor = 'rgba(255, 255, 255, 0)', 
+                   legend = list(
+                                 bgcolor = 'rgba(0, 0, 0, 0)', 
                                  bordercolor = 'rgba(255, 255, 255, 0)')) %>%
             
             #Remove unnecessary buttons from the modebar.
