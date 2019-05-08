@@ -16,7 +16,6 @@
 # Tab 5) Deprivation
 # Tab 6) Table
 
-
 #libraries
 library(shiny)
 library(dplyr)
@@ -24,7 +23,6 @@ library(plotly)
 library(shinyWidgets)
 library(stringr)
 library(DT)
-library(RColorBrewer)
 library(forcats)
 
 ##############################################.
@@ -62,6 +60,7 @@ all_data<-all_data %>%
                                    "Mental & behavioural (M&B)" = "Mental and Behavioural",
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+         drug_type = fct_recode(drug_type, "Any drug type" = "All"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both sexes" = "All"))
 
@@ -149,7 +148,7 @@ age_sex_tornado <- rbind(age_sex_male, age_sex_female)
 #we can now set up the data for that from the data trend page
 
 activity_summary<-all_data %>% 
-  filter(drug_type == "All", 
+  filter(drug_type == "Any drug type", 
         age_group == "All age groups",
         sex == "Both sexes",
         simd == "All", 
@@ -158,7 +157,7 @@ activity_summary<-all_data %>%
 drug_summary<- all_data %>% 
   filter(activity_type == "Stays",
          drug_type %in% drug_types2,
-         drug_type != "All",
+         drug_type != "Any drug type",
          age_group == "All age groups",
          sex == "Both sexes",
          simd == "All", 
@@ -166,7 +165,7 @@ drug_summary<- all_data %>%
 
 
 demographic_summary<- all_data  %>% 
-  filter(drug_type == "All",
+  filter(drug_type == "Any drug type",
          activity_type =="Patients",
          ((age_group != "All age groups" & sex == "Both sexes" & simd =="All")|
             (age_group == "All age groups" & sex != "Both sexes" & simd =="All")|
@@ -204,7 +203,8 @@ length_of_stay <- length_of_stay %>%
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
          drug_type = fct_recode (drug_type, 
-                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics"),
+                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
+                                 "Any drug type" = "All"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both sexes" = "All"))
 
@@ -221,7 +221,8 @@ emergency_admissions <- emergency_admissions %>%
                                    "Overdose (OD)" = "Overdose",
                                    "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
                  drug_type = fct_recode (drug_type, 
-                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics"),
+                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
+                                 "Any drug type" = "All"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both sexes" = "All"))
 
@@ -236,7 +237,10 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
          clinical_type= fct_recode(clinical_type, 
                                    "Mental & behavioural (M&B)" = "Mental and Behavioural",
                                    "Overdose (OD)" = "Overdose",
-                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"))
+                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+         drug_type = fct_recode (drug_type, 
+                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
+                                 "Any drug type" = "All"))
 
 
 ##############################################.
@@ -292,7 +296,7 @@ tabsetPanel(
       8,
       p(
         br(),
-        "The data explorer allows you to visualise drug realted hospital stay
+        "The data explorer allows you to visualise drug related hospital stay
         (DRHS) data in a variety of ways."
       ),
       tags$ul(
@@ -1365,7 +1369,7 @@ tabPanel(
                                     drug_types1
                                     else
                                       drug_types2), 
-                                  selected = "All"
+                                  selected = "Any drug type"
         )
       }) 
       
@@ -1426,7 +1430,7 @@ tabPanel(
                                 showticklabels = FALSE, 
                                 showgrid = FALSE)) %>%  
             config(displayModeBar = FALSE,
-                   displaylogo = F, collaborate = F, editable = F) 
+                   displaylogo = F, editable = F) 
           
         }
         
@@ -1462,7 +1466,7 @@ tabPanel(
                                 showticklabels = FALSE, 
                                 showgrid = FALSE)) %>%  
             config(displayModeBar = FALSE,
-                   displaylogo = F, collaborate = F, editable = F) 
+                   displaylogo = F, editable = F) 
           
         }
         
@@ -1495,7 +1499,7 @@ tabPanel(
                                 showticklabels = FALSE, 
                                 showgrid = FALSE)) %>%  
             config(displayModeBar = FALSE,
-                   displaylogo = F, collaborate = F, editable = F) 
+                   displaylogo = F, editable = F) 
           
         }
         
@@ -1534,7 +1538,8 @@ tabPanel(
               ),
        
           symbol = ~ geography_type,
-          symbols = ~c(17,15,16),
+          symbols = c(17,15,16),
+          
           name = ~  str_wrap(geography,10),
           #tooltip
           text = tooltip_geography,
@@ -1552,17 +1557,17 @@ tabPanel(
           
           layout(
             #Title
-          title = (paste0("<b>",paste0(str_sub(input$Activity_Type,1,-2),
-                                          " ", 
+          title = list (text = (paste0("<b>",input$Hospital_Type,
+                                       " hospital ",
+                                       str_to_lower(str_sub(input$Activity_Type,1,-2)),
+                                       " ",
                                        str_to_lower(input$Measure),
-                                       " for ",
-                                       str_to_lower(input$Hospital_Type),
-                                       " hospitals with","<br>", "clinical type ",
-                                      str_to_lower(str_sub(input$Clinical_Type,start = 1,end = 1)),
-                                       str_sub(input$Clinical_Type,start = 2),
-                                       " due to","<br>", "drug type ", 
-                                       str_to_lower(input$Substances),
-                                       " by location"),"<b>")),
+                                       "s for selected locations (",
+                                       word(input$Clinical_Type, start = 1, sep = " \\("), 
+                                       "; ",
+                                       input$Substances, 
+                                       ")", "<b>")),
+                                       font = list (size=15)),
             
 
           
@@ -1633,7 +1638,6 @@ tabPanel(
                  #
                  margin = list(l = 90, r = 60, b = 70, t = 90),
                  font = list(size = 13),
-                 titlefont = list(size = 15),
                  
                  #insert legend
                  showlegend = TRUE,
@@ -1651,7 +1655,7 @@ tabPanel(
                                                'toggleSpikelines',
                                                'hoverCompareCartesian',
                                                'hoverClosestCartesian'),
-                 displaylogo = F, collaborate = F, editable = F)
+                 displaylogo = F, editable = F)
         }
       })
       
@@ -1719,7 +1723,7 @@ tabPanel(
                                   multiple = TRUE, 
                                   options = list (`selected-text-format` = "count > 1", 
                                                   `count-selected-text` = "{0} drug types chosen"),
-                                  selected = "All"
+                                  selected = "Any drug type"
         )
       }) 
 
@@ -1778,7 +1782,7 @@ tabPanel(
                                 showticklabels = FALSE, 
                                 showgrid = FALSE)) %>%  
             config(displayModeBar = FALSE,
-                   displaylogo = F, collaborate = F, editable = F) 
+                   displaylogo = F, editable = F) 
           
         }
         
@@ -1815,7 +1819,7 @@ tabPanel(
                                 showticklabels = FALSE, 
                                 showgrid = FALSE)) %>%  
             config(displayModeBar = FALSE,
-                   displaylogo = F, collaborate = F, editable = F) 
+                   displaylogo = F, editable = F) 
           
         }
         
@@ -1848,7 +1852,7 @@ tabPanel(
                                 showticklabels = FALSE, 
                                 showgrid = FALSE)) %>%  
             config(displayModeBar = FALSE,
-                   displaylogo = F, collaborate = F, editable = F) 
+                   displaylogo = F, editable = F) 
           
         }
         
@@ -1883,10 +1887,16 @@ tabPanel(
           color = ~  drug_type,
           colors = 
             #Colors are assigned to each drug type
-          c('#000000','#b66dff','#004949',
-            '#b6dbff','#490092','#920000',
-            '#006ddb','#6db6ff','#db6d00',
-            '#ffb6db'
+          c('#000000',  #Any drug type
+            '#004949',  #cannabinoids
+            '#db6d00',  #Cocaine
+            '#6db6ff',  #Heroin
+            '#b6dbff',  #Methadone
+            '#ffb6db',  #Multiple/Other
+            '#006ddb',  #Opioids
+            '#490092',  #Other Opioids
+            '#920000',  #Other stimulants
+            '#b66dff'   #Sedatives/Hypnotics
           ),
           name = ~ str_wrap(drug_type,10),
           #tooltip
@@ -1905,17 +1915,18 @@ tabPanel(
           
           layout(
             #Title
-            title = (paste0("<b>",paste0(str_sub(input$Activity_Type2,1,-2),
-                                         " ", 
+            
+            title = list (text = (paste0("<b>",input$Hospital_Type2,
+                                         " hospital ",
+                                         str_to_lower(str_sub(input$Activity_Type2,1,-2)),
+                                         " ",
                                          str_to_lower(input$Measure2),
-                                         " for ",
-                                         str_to_lower(input$Hospital_Type2),
-                                         " hospitals with","<br>", "clinical type ",
-                                         str_to_lower(str_sub(input$Clinical_Type2,start = 1,end = 1)),
-                                         str_sub(input$Clinical_Type2,start = 2),
-                                         " in","<br>", 
-                                         input$Location2,
-                                         " by drug type"),"<b>")),
+                                         "s for selected drug types (",
+                                         input$Location2, 
+                                         "; ",
+                                         word(input$Clinical_Type2, start = 1, sep = " \\("), 
+                                         ")", "<b>")),
+                          font = list (size=15)),
  
             separators = ".,",
             annotations = 
@@ -1979,7 +1990,6 @@ tabPanel(
             #
             margin = list(l = 90, r = 60, b = 70, t = 90),
             font = list(size = 13),
-            titlefont = list(size = 15),
             
             #insert legend
             showlegend = TRUE,
@@ -1995,7 +2005,7 @@ tabPanel(
                                                'toggleSpikelines',
                                                'hoverCompareCartesian',
                                                'hoverClosestCartesian'),
-                 displaylogo = F, collaborate = F, editable = F)
+                 displaylogo = F, editable = F)
         }  
       })
       
@@ -2121,7 +2131,7 @@ tabPanel(
                                   showticklabels = FALSE, 
                                   showgrid = FALSE)) %>%  
               config(displayModeBar = FALSE,
-                     displaylogo = F, collaborate = F, editable = F) 
+                     displaylogo = F, editable = F) 
             
           }
           
@@ -2156,7 +2166,7 @@ tabPanel(
                                   showticklabels = FALSE, 
                                   showgrid = FALSE)) %>%  
               config(displayModeBar = FALSE,
-                     displaylogo = F, collaborate = F, editable = F) 
+                     displaylogo = F, editable = F) 
             
           }
           
@@ -2205,19 +2215,18 @@ tabPanel(
             
             #Make the graph title reactive.
             
-            layout(title = (paste0("<b>",paste0(str_sub(input$Activity_Type3,1,-2),
-                                                " ", 
+            layout(
+                   title = list (text = (paste0("<b>",input$Hospital_Type3,
+                                                " hospital ",
+                                                str_to_lower(str_sub(input$Activity_Type3,1,-2)),
+                                                " ",
                                                 str_to_lower(input$Measure3),
-                                                " for ",
-                                                str_to_lower(input$Hospital_Type3),
-                                                " hospitals with","<br>", "clinical type ",
-                                                str_to_lower(str_sub(input$Clinical_Type3,start = 1,end = 1)),
-                                                str_sub(input$Clinical_Type3,start = 2),
-                                                " by drug type ",
-                                                str_to_lower(input$Substances3),"<br>",
-                                                " by age group and sex in Scotland"),"<b>")),
-                   
-
+                                                "s for selected age group/sex (Scotland; ",
+                                                word(input$Clinical_Type3, start = 1, sep = " \\("), 
+                                                "; ",
+                                                input$Substances3,
+                                                ")", "<b>")),
+                                 font = list (size=15)),
                    separators = ".,",
                    annotations = 
                      list(x = 0.98, y = -0.27, 
@@ -2290,7 +2299,6 @@ tabPanel(
                    
                    margin = list(l = 90, r = 60, b = 70, t = 90),
                    font = list(size = 13),
-                   titlefont = list(size = 15),
                    
                    #Insert a legend so that the user knows which colour...
                    #corresponds to which location of treatment.
@@ -2308,7 +2316,7 @@ tabPanel(
                                                  'toggleSpikelines', 
                                                  'hoverCompareCartesian', 
                                                  'hoverClosestCartesian'), 
-                   displaylogo = F, collaborate = F, editable = F)
+                   displaylogo = F, editable = F)
           }
         })
         
@@ -2424,7 +2432,7 @@ tabPanel(
                                   showticklabels = FALSE, 
                                   showgrid = FALSE)) %>%  
               config(displayModeBar = FALSE,
-                     displaylogo = F, collaborate = F, editable = F) 
+                     displaylogo = F, editable = F) 
             
           }
           
@@ -2460,7 +2468,7 @@ tabPanel(
                                   showticklabels = FALSE, 
                                   showgrid = FALSE)) %>%  
               config(displayModeBar = FALSE,
-                     displaylogo = F, collaborate = F, editable = F) 
+                     displaylogo = F, editable = F) 
             
           }
           
@@ -2506,18 +2514,19 @@ tabPanel(
             height = 500
           ) %>%
             
-            layout(title = (paste0("<b>",paste0(str_sub(input$Activity_Type3,1,-2),
-                                           " ", 
-                                           str_to_lower(input$Measure3),
-                                           " for ",
-                                           str_to_lower(input$Hospital_Type3),
-                                           " hospitals with","<br>", "clinical type ",
-                                           str_to_lower(str_sub(input$Clinical_Type3,start = 1,end = 1)),
-                                           str_sub(input$Clinical_Type3,start = 2),
-                                           " by drug type ",
-                                           str_to_lower(input$Substances3),"<br>",
-                                           " by age group and sex in Scotland for ",
-                                           input$Financial_Year),"<b>")),
+            layout(title = list (text = (paste0("<b>",input$Hospital_Type3,
+                                                " hospital ",
+                                                str_to_lower(str_sub(input$Activity_Type3,1,-2)),
+                                                " ",
+                                                str_to_lower(input$Measure3),
+                                                "s by age group/sex (Scotland; ",
+                                                input$Financial_Year,
+                                                "; ",
+                                                word(input$Clinical_Type3, start = 1, sep = " \\("), 
+                                                "; ",
+                                                input$Substances3,
+                                                ")", "<b>")),
+                                 font = list (size=15)),
               
               
               bargap = 0.2,
@@ -2634,7 +2643,6 @@ tabPanel(
                 t = 90
               ),
               font = list(size = 13),
-              titlefont = list(size = 15),
               
               #Insert a legend so that the user knows which colour...
               #corresponds to which sex.
@@ -2662,7 +2670,6 @@ tabPanel(
                 'hoverClosestCartesian'
               ),
               displaylogo = F,
-              collaborate = F,
               editable = F
             )
           }
@@ -2810,7 +2817,7 @@ tabPanel(
                                   showticklabels = FALSE, 
                                   showgrid = FALSE)) %>%  
               config(displayModeBar = FALSE,
-                     displaylogo = F, collaborate = F, editable = F) 
+                     displaylogo = F, editable = F) 
             
           }
           
@@ -2848,20 +2855,19 @@ tabPanel(
             
             #Make the graph title reactive.
             
-            layout(title = (paste0("<b>",paste0(str_sub(input$Activity_Type4,1,-2),
-                                    " ", 
-                                    str_to_lower(input$Measure4),
-                                    " for ",
-                                    str_to_lower(input$Hospital_Type4),
-                                    " hospitals with","<br>", "clinical type ",
-                                    str_to_lower(str_sub(input$Clinical_Type4,start = 1,end = 1)),
-                                    str_sub(input$Clinical_Type4,start = 2),
-                                    " by drug type ",
-                                    str_to_lower(input$Substances4),"<br>",
-                                    " by deprivation quintile in Scotland for ",
-                                    input$Financial_Year2),"<b>")),
-                   
-                   
+            layout( title = list (text = (paste0("<b>",input$Hospital_Type4,
+                                                " hospital ",
+                                                str_to_lower(str_sub(input$Activity_Type4,1,-2)),
+                                                " ",
+                                                str_to_lower(input$Measure3),
+                                                "s by deprivation quintile (Scotland; ",
+                                                input$Financial_Year2,
+                                                "; ",
+                                                word(input$Clinical_Type4, start = 1, sep = " \\("), 
+                                                "; ",
+                                                input$Substances4,
+                                                ")", "<b>")),
+                                 font = list (size=15)),
                    
                    
                    separators = ".,",
@@ -2926,7 +2932,6 @@ tabPanel(
                    
                    margin = list(l = 90, r = 100, b = 70, t = 90),
                    font = list(size = 13),
-                   titlefont = list(size = 15),
                    
                    #Insert a legend so that the user knows which colour...
                    #corresponds to which location of treatment.
@@ -2947,7 +2952,7 @@ tabPanel(
                                                  'toggleSpikelines', 
                                                  'hoverCompareCartesian', 
                                                  'hoverClosestCartesian'), 
-                   displaylogo = F, collaborate = F, editable = F)
+                   displaylogo = F, editable = F)
           }
         })
         
