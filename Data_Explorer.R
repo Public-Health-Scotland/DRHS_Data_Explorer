@@ -24,6 +24,9 @@ library(shinyWidgets)
 library(stringr)
 library(DT)
 library(forcats)
+library(shinyBS)
+library(bsplus)
+
 
 ##############################################.
 ############## Reading In Data ----
@@ -46,7 +49,6 @@ all_data<-all_data %>%
 #Round to two decimal places. 
 all_data<-all_data%>% 
   mutate(value = round(value, 2))
-
 
 #We will manually change the names of factors in R until we have an agreed 
 #terminology for the hospital type and clinical type, as well age and sex. 
@@ -107,7 +109,9 @@ deprivation <- all_data %>%
 #Drug Types are created as list to allow different options dependent on the 
 #Hospital admission types
 hospital_types <- as.character(unique(all_data$hospital_type))
+hospital_types<-c(hospital_types[3],hospital_types[1],hospital_types[2])
 clinical_types <- as.character(unique(all_data$clinical_type))
+clinical_types<-c(clinical_types[3],clinical_types[1],clinical_types[2])
 activity_type <- as.character(unique(all_data$activity_type))
 location_types <- as.character(unique(all_data$geography_type))
 locations<- as.character(unique(all_data$geography))
@@ -285,10 +289,14 @@ tabsetPanel(
   #
   
   tabPanel(
+    
     "Introduction",
     icon = icon("info-circle"),
     style = "float: top; height: 95%; width: 95%;
     background-color: #FFFFFF; border: 0px solid #FFFFFF;",
+    p(
+      h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
+    ),
     column(2,
            h3("Data explorer")
     ),
@@ -426,69 +434,100 @@ tabsetPanel(
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
+    p(
+      h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
+    ),
     h3("Time trend (location comparison)"),
+    
     p(
       HTML(
-        "This section allows users to visualise changes in drug related hospital
-         activity over time and to make comparisons between different locations. 
-         Information is available for financial years 1996/97 to 2017/18."),
-        br(),
-      br(),
-      HTML("Use the filters to visualise the data you are interested in.
-          You can visualise multiple locations at the same time to allow 
-          comparisons between Scotland, NHS Boards and Alcohol and Drug 
-          Partnerships (ADPs). Individual trend lines can be hidden by clicking 
-          on the labels shown in the chart legend. Opioid sub categories are 
-          available if overdoses are selected as Clinical type. ADP information 
-          is available from 1997/98 and new patient trends are available from 2006/07."),
-      br(),
-      br(),
-      HTML("To view 
-        your data selection in a table, use the <a href = '#geography_link'> 
-       'Show/hide table' </a>  button at the
-        bottom of the page. To download your data selection as a CSV file, use the
-        'Download data' button under the filters. At the top-right corner of the 
-        graph, you will see a toolbar with four buttons:"
-      )
+        "Visualise drug-related hospital activity over time and make
+        comparisons between locations. ")
       ),
     
-    tags$ul(
-      tags$li(
-        icon("camera"),
-        tags$b("Download plot as a png"),
-        " - click this button to save the graph as an image
+    bs_accordion(id = "drhs_text") %>% 
+      bs_set_opts(panel_type = "primary") %>%
+      bs_append(title = "Selection information", 
+                content = p(
+                  "The charts can be modified using the drop down boxes", 
+                  tags$ul(
+                    tags$li("Hospital type: general acute or psychiatric 
+                            hospital data (or a combination);"),
+                    tags$li("Location: data from Scotland, specific NHS
+                            Boards or Alcohol and Drug Partnerships 
+                            (choose up to 8 locations);"),
+                    tags$li("Clinical type: mental & behavioural stays, 
+                            accidental poisoning/overdose stays (or a combination);"),
+                    tags$li("Drug type: the type of drug associated with the 
+                            stay (opioid sub categories are available if overdoses
+                            are selected as Clinical type);"),
+                    tags$li("Activity type: Stays, patients or new patients; and"),
+                    tags$li("Measure: Numbers, rates or percentages.")
+                  ), 
+                  "To download your data selection as a CSV file, use the
+                  'Download data' button under the filters.", 
+                  br(),br(),
+                  "For technical information, please see the Introduction page."
+                ))%>%
+      bs_set_opts(panel_type = "primary") %>%
+      bs_append(title = "Chart functions", 
+                content = p("At the top-right corner of the 
+        graph, you will see a toolbar with four buttons:",
+                  tags$ul(
+                    tags$li(
+                      icon("camera"),
+                      tags$b("Download plot as a png"),
+                      " - click this button to save the graph as an image
         (please note that Internet Explorer does not support this
         function)."
-      ),
-      tags$li(
-        icon("search"),
-        tags$b("Zoom"),
-        " - zoom into the graph by clicking this button and then
+                    ),
+                    tags$li(
+                      icon("search"),
+                      tags$b("Zoom"),
+                      " - zoom into the graph by clicking this button and then
         clicking and dragging your mouse over the area of the
         graph you are interested in."
-      ),
-      tags$li(
-        icon("move", lib = "glyphicon"),
-        tags$b("Pan"),
-        " - adjust the axes of the graph by clicking this button
+                    ),
+                    tags$li(
+                      icon("move", lib = "glyphicon"),
+                      tags$b("Pan"),
+                      " - adjust the axes of the graph by clicking this button
         and then clicking and moving your mouse in any direction
         you want."
-      ),
-      tags$li(
-        icon("home"),
-        tags$b("Reset axes"),
-        " - click this button to return the axes to their
+                    ),
+                    tags$li(
+                      icon("home"),
+                      tags$b("Reset axes"),
+                      " - click this button to return the axes to their
         default range."
-      )
-      ),
-    
+                    )
+                  ),"Categories can be shown/hidden by clicking on labels in the
+                  legend to the right of each chart."
+                )
+                )%>%
+      bs_set_opts(panel_type = "primary") %>%
+      bs_append(title = "Table functions", 
+                content = p(HTML("To view 
+        your data selection in a table, use the <a href = '#geography_link'> 
+                            'Show/hide table' </a>  button at the
+                            bottom of the page."),
+                  tags$ul(
+                    tags$li(tags$b("Show entries"), " - change the number of rows shown
+                            in the table using the drop-down box"),
+                    tags$li(tags$b("Search"), " - enter text to search data for a specific word or
+                            numerical value."),
+                    tags$li(icon("sort", lib = "glyphicon"),
+                            tags$b("Sort"), " - click to sort the table in ascending or 
+                            descending order based on the values in a column"),
+                    tags$li(tags$b("Page controls"), " - switch to specific page of data 
+                            within the table.")
+                  )
+                )),
     p(
-      br(),
       tags$b(
         "Note: Statistical disclosure control has been applied to protect
         patient confidentiality. Therefore, the figures presented here
-        may not be additive and may differ to previous
-        sources of information."
+        may not be additive and may differ from previous publications."
       )
       ),
     
@@ -513,12 +552,12 @@ tabsetPanel(
         4,
         shinyWidgets::pickerInput(
           inputId = "Hospital_Type",
-          label = "Select hospital type",
+          label = "Hospital type",
           choices = hospital_types
         ), 
         shinyWidgets::pickerInput(
           inputId = "Location",
-          label = "Select location (multiple selection)",
+          label = "Location (multiple selection)",
           choices = geography_list,
           multiple = TRUE,
           selected = "Scotland",
@@ -551,12 +590,12 @@ tabsetPanel(
           4,
           shinyWidgets::pickerInput(
             inputId = "Activity_Type",
-            label = "Select activity type",
+            label = "Activity type",
             choices = activity_type
           ),
           shinyWidgets::pickerInput(
             inputId = "Measure",
-            label = "Select measure",
+            label = "Measure",
             choices = measures,
             selected = "Rate"
           )
@@ -595,6 +634,9 @@ tabsetPanel(
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
+    p(
+      h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
+    ),
     h3("Time trend (drug type comparison)"),
     p(
       HTML(
@@ -682,12 +724,12 @@ tabsetPanel(
         4,
         shinyWidgets::pickerInput(
           inputId = "Hospital_Type2",
-          label = "Select hospital type",
+          label = "Hospital type",
           choices = hospital_types
         ), 
         shinyWidgets::pickerInput(
           inputId = "Location2",
-          label = "Select location",
+          label = "Location",
           choices = geography_list,
           selected = "Scotland",
           options = list(size=10, 
@@ -715,12 +757,12 @@ tabsetPanel(
         4,
         shinyWidgets::pickerInput(
           inputId = "Activity_Type2",
-          label = "Select activity type",
+          label = "Activity type",
           choices = activity_type
         ),
         shinyWidgets::pickerInput(
           inputId = "Measure2",
-          label = "Select measure",
+          label = "Measure",
           choices = measures,
           selected = "Rate"
         )
@@ -759,6 +801,9 @@ tabPanel(
   icon = icon("child"),
   style = "height: 95%; width: 95%; background-color: #FFFFFF;
   border: 0px solid #FFFFFF;",
+  p(
+    h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
+  ),
   h3("Age/sex"),
   
   p(
@@ -858,7 +903,7 @@ p(HTML("To view your data selection in a table, use the
     column(4,
            shinyWidgets::pickerInput(
              inputId = "Hospital_Type3",
-             label = "Select hospital type",
+             label = "Hospital type",
              choices = hospital_types
            ),
            uiOutput("age_sex_substance")),
@@ -868,7 +913,7 @@ p(HTML("To view your data selection in a table, use the
       uiOutput("age_sex_clinical_type"),
       shinyWidgets::pickerInput(
         inputId = "Measure3",
-        label = "Select measure",
+        label = "Measure",
         choices = measures,
         selected = "Rate"
       )
@@ -877,7 +922,7 @@ p(HTML("To view your data selection in a table, use the
     column(4,
            shinyWidgets::pickerInput(
              inputId = "Activity_Type3",
-             label = "Select activity type",
+             label = "Activity type",
              choices = activity_type,
              selected = "Stays"
            ))
@@ -906,7 +951,7 @@ p(HTML("To view your data selection in a table, use the
         4,
         shinyWidgets::pickerInput(
           inputId = "Age",
-          label = "Select age group (multiple selection)",
+          label = "Age group (multiple selection)",
           choices = age,
           multiple = TRUE,
           selected = "All age groups"
@@ -925,7 +970,7 @@ p(HTML("To view your data selection in a table, use the
         4,
         shinyWidgets::pickerInput(
           inputId = "Sex",
-          label = "Select sex (multiple selection)",
+          label = "Sex (multiple selection)",
           choices = sex,
           multiple = TRUE,
           selected = "Both sexes"
@@ -976,7 +1021,7 @@ p(HTML("To view your data selection in a table, use the
         chooseSliderSkin("HTML5"),
         shinyWidgets::sliderTextInput(
           inputId = "Financial_Year",
-          label = "Select financial year",
+          label = "Financial year",
           choices = financial_years,
           selected = "2017/18",
           grid = T,
@@ -1045,6 +1090,9 @@ tabPanel(
   icon = icon("bar-chart"),
   style = "height: 95%; width: 95%; background-color: #FFFFFF;
   border: 0px solid #FFFFFF;",
+  p(
+    h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
+  ),
   h3("Deprivation"),
   p(
     HTML(
@@ -1125,7 +1173,7 @@ tabPanel(
     column(4,
            shinyWidgets::pickerInput(
              inputId = "Hospital_Type4",
-             label = "Select hospital type",
+             label = "Hospital type",
              choices = hospital_types
            ),
            uiOutput("SIMD_substance"),
@@ -1151,7 +1199,7 @@ tabPanel(
       
       shinyWidgets::pickerInput(
         inputId = "Financial_Year2",
-        label = "Select financial year",
+        label = "Financial year",
         choices =  rev(financial_years),
         selected = "2017/18")
       
@@ -1161,13 +1209,13 @@ tabPanel(
     column(4,
            shinyWidgets::pickerInput(
              inputId = "Activity_Type4",
-             label = "Select activity type",
+             label = "Activity type",
              choices = activity_type,
              selected = "Stays"
            ), 
            shinyWidgets::pickerInput(
              inputId = "Measure4",
-             label = "Select measure",
+             label = "Measure",
              choices = measures,
              selected = "Rate"
            )
@@ -1210,6 +1258,9 @@ tabPanel(
   icon = icon("table"), 
   style = "float: top; height: 95%; width: 95%; background-color: #FFFFFF; 
   border: 0px solid #FFFFFF;", 
+  p(
+    h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
+  ),
   h3("Table"), 
   p(
     
@@ -1253,7 +1304,7 @@ tabPanel(
                    
                    shinyWidgets::pickerInput(
                      inputId = "table_filenames", 
-                     label = "Select data file",  
+                     label = "Data file",  
                      choices = c("Time trend (Data explorer)", 
                                  "Age/sex (Data explorer)", 
                                  "Deprivation (Data explorer)", 
@@ -1358,13 +1409,13 @@ tabPanel(
 
       output$time_trend_clinical_type <- renderUI({
         shinyWidgets::pickerInput(inputId = "Clinical_Type", 
-                                  label = "Select clinical type",
+                                  label = "Clinical type",
                                   choices = clinical_types)
       })
 
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
-                                  label = "Select drug type",  
+                                  label = "Drug type",  
                                   choices = (if(input$Clinical_Type == "Overdose (OD)")
                                     drug_types1
                                     else
@@ -1437,7 +1488,7 @@ tabPanel(
         #Now let's create alt message.
 
         else if (input$Substances == 
-                  "All"
+                  "Any drug type"
                   & input$Measure== 
                   "Percentage")
         { 
@@ -1518,7 +1569,9 @@ tabPanel(
           geography_new()$drug_type,
           "<br>",
           input$Measure,": ",
-          formatC(geography_new()$value, big.mark = ",")
+          formatC(geography_new()$value, big.mark = ",",
+                  digits = ifelse(input$Measure =="Number",0,2),
+                  format ="f")
         )
         
         #Create the main body of the chart.
@@ -1562,7 +1615,8 @@ tabPanel(
                                        str_to_lower(str_sub(input$Activity_Type,1,-2)),
                                        " ",
                                        str_to_lower(input$Measure),
-                                       "s for selected locations (",
+                                       "s for selected locations",
+                                       "<br>", "(",
                                        word(input$Clinical_Type, start = 1, sep = " \\("), 
                                        "; ",
                                        input$Substances, 
@@ -1673,7 +1727,9 @@ tabPanel(
                                input$Measure),
                   rownames = FALSE,
                   style = "Bootstrap"
-        )
+        ) %>% 
+          formatRound(columns = -1, digits = ifelse(input$Measure =="Number",0,2))
+    
       })
       
       
@@ -1709,13 +1765,13 @@ tabPanel(
       
       output$time_trend_clinical_type2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Clinical_Type2", 
-                                  label = "Select clinical type",
+                                  label = "Clinical type",
                                   choices = clinical_types)
       })
       
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
-                                  label = "Select drug type (multiple selection)",  
+                                  label = "Drug type (multiple selection)",  
                                   choices = (if(input$Clinical_Type2 == "Overdose (OD)")
                                   drug_types1
                                   else
@@ -1789,7 +1845,7 @@ tabPanel(
         #Now let's create alt message.
         
         else if (input$Substances2 == 
-                 "All"
+                 "Any drug type"
                  & length(input$Substances2) ==1
                  & input$Measure2 == 
                  "Percentage")
@@ -1874,8 +1930,12 @@ tabPanel(
                   substances_new()$drug_type,
                   "<br>",
                   input$Measure2,": ",
-                  formatC(substances_new()$value, big.mark = ",")
+                  formatC(substances_new()$value, big.mark = ",", 
+                          digits = ifelse(input$Measure2 =="Number",0,2),
+                          format = 'f')
                 )
+                
+                
                 
         #Create the main body of the chart.
         
@@ -1921,7 +1981,8 @@ tabPanel(
                                          str_to_lower(str_sub(input$Activity_Type2,1,-2)),
                                          " ",
                                          str_to_lower(input$Measure2),
-                                         "s for selected drug types (",
+                                         "s for selected drug types",
+                                         "<br>", "(",
                                          input$Location2, 
                                          "; ",
                                          word(input$Clinical_Type2, start = 1, sep = " \\("), 
@@ -2023,7 +2084,9 @@ tabPanel(
                                "Drug type",
                                input$Measure2),
                   rownames = FALSE,
-                  style = "Bootstrap")
+                  style = "Bootstrap") %>% 
+          formatRound(columns = -1, 
+                      digits = ifelse(input$Measure2 =="Number",0,2))
       })
         
         output$download_substances <- downloadHandler(
@@ -2054,7 +2117,7 @@ tabPanel(
         output$age_sex_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Clinical_Type3",
-            label = "Select clinical type",
+            label = "Clinical type",
             choices = clinical_types
           )
         })
@@ -2062,7 +2125,7 @@ tabPanel(
         output$age_sex_substance <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Substances3",
-            label = "Select drug type",
+            label = "Drug type",
             choices = (if (input$Clinical_Type3 == "Overdose (OD)")
               drug_types1
               else
@@ -2101,7 +2164,7 @@ tabPanel(
           
           
           if (input$Substances3 == 
-             "All"
+             "Any drug type"
              & input$Measure3 == 
              "Percentage")
             
@@ -2185,7 +2248,10 @@ tabPanel(
             "<br>",
             input$Measure3,
             ": ",
-            formatC(abs(age_sex_time_new()$value), big.mark = ",")
+            formatC(abs(age_sex_time_new()$value), big.mark = ",", 
+                    digits = ifelse(input$Measure3 =="Number",0,2), 
+                    format = 'f'
+            )
           )
           
           plot_ly(
@@ -2221,7 +2287,8 @@ tabPanel(
                                                 str_to_lower(str_sub(input$Activity_Type3,1,-2)),
                                                 " ",
                                                 str_to_lower(input$Measure3),
-                                                "s for selected age group/sex (Scotland; ",
+                                                "s for selected age group/sex",
+                                                "<br>", "(Scotland; ",
                                                 word(input$Clinical_Type3, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances3,
@@ -2338,7 +2405,9 @@ tabPanel(
               "Sex",
               input$Measure3
             )
-          )
+          ) %>% 
+            formatRound(columns = -1, 
+                        digits = ifelse(input$Measure3 =="Number",0,2))
         })
         
         #Download button
@@ -2402,7 +2471,7 @@ tabPanel(
           
           
           if (input$Substances3 == 
-              "All"
+              "Any drug type"
               & input$Measure3 == 
               "Percentage")
             
@@ -2487,7 +2556,9 @@ tabPanel(
             "<br>",
             input$Measure3,
             ": ",
-            formatC(abs(age_sex_year_new()$value), big.mark = ",")
+            formatC(abs(age_sex_year_new()$value), big.mark = ",", 
+                    digits = ifelse(input$Measure3 =="Number",0,2), 
+                    format = 'f')
           )
           
           plot_ly(
@@ -2519,7 +2590,8 @@ tabPanel(
                                                 str_to_lower(str_sub(input$Activity_Type3,1,-2)),
                                                 " ",
                                                 str_to_lower(input$Measure3),
-                                                "s by age group/sex (Scotland; ",
+                                                "s by age group/sex",
+                                                "<br>", "(Scotland; ",
                                                 input$Financial_Year,
                                                 "; ",
                                                 word(input$Clinical_Type3, start = 1, sep = " \\("), 
@@ -2708,7 +2780,9 @@ tabPanel(
               "Sex",
               input$Measure3
             )
-          )
+          ) %>% 
+            formatRound(columns = -1,
+                        digits = ifelse(input$Measure3 =="Number",0,2))
         })
         
         #Download button
@@ -2747,7 +2821,7 @@ tabPanel(
         output$SIMD_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Clinical_Type4",
-            label = "Select clinical type",
+            label = "Clinical type",
             choices = clinical_types
           )
         })
@@ -2755,7 +2829,7 @@ tabPanel(
         output$SIMD_substance <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Substances4",
-            label = "Select drug type",
+            label = "Drug type",
             choices = (if (input$Clinical_Type4 == "Overdose (OD)")
               drug_types1
               else
@@ -2836,7 +2910,9 @@ tabPanel(
             "<br>",
             input$Measure4,
             ": ",
-            formatC(SIMD_new()$value, big.mark = ",")
+            formatC(SIMD_new()$value, big.mark = ",", 
+                    digits = ifelse(input$Measure4 =="Number",0,2), 
+                    format = 'f')
           )
           
           plot_ly(
@@ -2860,7 +2936,8 @@ tabPanel(
                                                 str_to_lower(str_sub(input$Activity_Type4,1,-2)),
                                                 " ",
                                                 str_to_lower(input$Measure3),
-                                                "s by deprivation quintile (Scotland; ",
+                                                "s by deprivation quintile",
+                                                "<br>","(Scotland; ",
                                                 input$Financial_Year2,
                                                 "; ",
                                                 word(input$Clinical_Type4, start = 1, sep = " \\("), 
@@ -2878,7 +2955,7 @@ tabPanel(
                                         "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
                           showarrow = F, xref='paper', yref='paper', 
                           xanchor='left', yanchor='auto', xshift=0, yshift=0,
-                          font=list(family = "arial", size=12, color="#7f7f7f")),    #Also, wrap the y axis title in blank spaces so it doesn't...
+                          font=list(family = "arial", size=12, color="#7f7f7f")),  
                    #overlap with the y axis tick labels.
                    #Finally, make the y axis title reactive.
                    
@@ -2972,7 +3049,9 @@ tabPanel(
               "Deprivation index",
               input$Measure4
             )
-          )
+          ) %>% 
+            formatRound(columns = -1, 
+                        digits = ifelse(input$Measure4 =="Number",0,2))
         })
         
         #Download button
