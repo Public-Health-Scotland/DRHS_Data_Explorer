@@ -469,7 +469,6 @@ tabsetPanel(
                   br(),br(),
                   "For technical information, please see the Introduction page."
                 ))%>%
-      bs_set_opts(panel_type = "primary") %>%
       bs_append(title = "Chart functions", 
                 content = p("At the top-right corner of the 
         graph, you will see a toolbar with four buttons:",
@@ -505,7 +504,6 @@ tabsetPanel(
                   legend to the right of each chart."
                 )
                 )%>%
-      bs_set_opts(panel_type = "primary") %>%
       bs_append(title = "Table functions", 
                 content = p(HTML("To view 
         your data selection in a table, use the <a href = '#geography_link'> 
