@@ -304,8 +304,9 @@ tabsetPanel(
       8,
       p(
         br(),
-        "The data explorer allows you to visualise drug related hospital stay
-        (DRHS) data in a variety of ways."
+        "The Data Explorer provides a detailed breakdown of Drug-Related 
+        Hospital Statistics data in Scotland over time. You can visualise these 
+        data using the following pages:"
       ),
       tags$ul(
         tags$li(
@@ -313,7 +314,7 @@ tabsetPanel(
             "link_to_geography", "Time trend (location comparison)"
           )),
           icon("line-chart"),
-          " - shows DRHS activity over time, allowing comparisons by location."
+          " - compare data by location, over time."
       ),
       
         tags$li(
@@ -321,47 +322,63 @@ tabsetPanel(
             "link_to_substances", "Time trend (drug type comparison)"
           )),
           icon("line-chart"),
-          " - shows DRHS activity over time, allowing comparisons by drug type."
+          " - compare data by drug type, over time."
         ),
       tags$li(
         tags$b(actionLink(
           "link_to_age_sex", "Age/sex"
         )),
         icon("child"),
-        " - shows DRHS activity by age group and sex.."
+        " - show data by age group and sex."
       ),
       tags$li(
         tags$b(actionLink(
           "link_to_deprivation", "Deprivation"
         )),
         icon("bar-chart"),
-        " - shows DRHS activity by deprivation group."
+        " - show data by deprivation quintile."
       ),
       tags$li(
         tags$b(actionLink(
           "link_to_table", "Table"
         )),
         icon("table"),
-        " - data tables related to content of the Data Explorer and Data Trends
-        pages, plus additional tables not visualised."
+        " - view and customise data tables."
       )
       ),
       
       p(
-        "When using the data explorer, please take the following 
-        factors into consideration:"
+        "Click the button below to download the glossary."
       ),
-      tags$ul( 
-        tags$li(
-          "The data explorer visualises information recorded in the SMR01 and SMR04
-          datasets. The SMR01 dataset records general acute hospital inpatient and day
-          case activity and SMR04 records psychiatric hospital inpatient and day case 
-          activity."
+      
+      p("A less detailed overview of drug-related hospital stays in Scotland 
+        over time is available in the",
+        tags$a(
+          href = "https://scotland.shinyapps.io/nhs-drhs-trend-data/", 
+          "Trend Data"
         ),
-        tags$li(
-          "Data completeness may vary slightly from year to year. As a result,
-          data are provisional and subject to change. For more information, visit 
-          the SMR Completeness webpage. ", 
+        " page"),
+      
+      bs_accordion(id = "drhs_introduction_text") %>% 
+        bs_set_opts(panel_type = "primary") %>%
+        bs_append(title = "Technical information", 
+                  content = 
+                    tags$ul( 
+                      tags$li(
+                        "The data explorer visualises information recorded in the SMR01 and SMR04
+                        datasets. The SMR01 dataset records general acute hospital inpatient and day
+                        case activity and SMR04 records psychiatric hospital inpatient and day case 
+                        activity."
+                      ),
+                      tags$li(
+                        "Information is generally available for financial years 1996/97 to 2017/18.
+                        Where shown, ADP information is available from 1997/98 and new patient trends 
+                        are available from 2006/07."
+                      ),
+                      tags$li(
+                        "Data completeness may vary slightly from year to year. As a result,
+                        data are provisional and subject to change. For more information, visit 
+                        the SMR Completeness webpage. ", 
           tags$a(
             href = "http://www.isdscotland.org/products-and-Services/Data-Support-and-Monitoring/SMR-Completeness/", 
             "SMR Completeness"
@@ -385,20 +402,11 @@ tabsetPanel(
           tags$a(
             href = "http://www.isdscotland.org/About-ISD/Confidentiality/disclosure_protocol_v3.pdf", 
             "NSS Statistical Disclosure Control Protocol."
-          ), 
-          
-          ""
+          )
         )
         
+      )
       ),
-      
-      p(
-        "To help users understand the information visualised in the Data Explorer,
-        we have created a glossary of commonly used terms. 
-        Click the button below to download the glossary:"
-      ),
-      
-      
       downloadButton(outputId = "download_glossary", 
                      label = "Download glossary", 
                      class = "glossary"),
@@ -406,7 +414,6 @@ tabsetPanel(
         tags$style(".glossary { background-color: #0072B2; } 
                    .glossary { color: #FFFFFF; }")
         ),
-      
       p(
         br(),
         "If you experience any problems using this dashboard or have further
@@ -440,12 +447,12 @@ tabsetPanel(
     h3("Time trend (location comparison)"),
     
     p(
-      HTML(
+      h4(
         "Visualise drug-related hospital activity over time and make
         comparisons between locations. ")
       ),
     
-    bs_accordion(id = "drhs_text") %>% 
+    bs_accordion(id = "drhs_location_comparison_text") %>% 
       bs_set_opts(panel_type = "primary") %>%
       bs_append(title = "Selection information", 
                 content = p(
@@ -453,15 +460,15 @@ tabsetPanel(
                   tags$ul(
                     tags$li("Hospital type: general acute or psychiatric 
                             hospital data (or a combination);"),
+                    tags$li("Clinical type: mental & behavioural stays, 
+                            accidental poisoning/overdose stays (or a combination);"),
+                    tags$li("Activity type: Stays, patients or new patients;"),
                     tags$li("Location: data from Scotland, specific NHS
                             Boards or Alcohol and Drug Partnerships 
                             (choose up to 8 locations);"),
-                    tags$li("Clinical type: mental & behavioural stays, 
-                            accidental poisoning/overdose stays (or a combination);"),
                     tags$li("Drug type: the type of drug associated with the 
                             stay (opioid sub categories are available if overdoses
-                            are selected as Clinical type);"),
-                    tags$li("Activity type: Stays, patients or new patients; and"),
+                            are selected as Clinical type); and"),
                     tags$li("Measure: Numbers, rates or percentages.")
                   ), 
                   "To download your data selection as a CSV file, use the
@@ -637,67 +644,92 @@ tabsetPanel(
     ),
     h3("Time trend (drug type comparison)"),
     p(
-      HTML(
-        "This section allows users to visualise changes in drug related hospital
-        activity over time and to make comparisons between different drug types.
-        Information is available for financial years 1996/97 to 2017/18. "
-      ),
-      br(),
-      br(),
-      HTML("Use the filters to visualise the data you are interested in. You can
-           visualise multiple drug types at the same time to allow comparisons
-           between drug types within a single location (Scotland, 
-           an NHS Board or an Alcohol and Drug Partnership (ADP)). Individual 
-           trend lines can be hidden by clicking on the labels shown in 
-           the chart legend. Opioid sub categories are available if overdoses 
-           are selected as Clinical type. ADP information is available from 
-           1997/98 and new patient trends are available from 2006/07."),
-      br(),
-      br(),
-      HTML("To view your data selection in a table,
-           use the <a href = '#substances_link'> 'Show/hide table' </a>  button at the
-           bottom of the page. To download your data selection as a CSV file, use the
-           'Download data' button under the filters. At the top-right corner of the 
-           graph, you will see a toolbar with four buttons:")
-      ),
-    
-    tags$ul(
-      tags$li(
-        icon("camera"),
-        tags$b("Download plot as a png"),
-        " - click this button to save the graph as an image
-        (please note that Internet Explorer does not support this
-        function)."
-      ),
-      tags$li(
-        icon("search"),
-        tags$b("Zoom"),
-        " - zoom into the graph by clicking this button and then
-        clicking and dragging your mouse over the area of the
-        graph you are interested in."
-      ),
-      tags$li(
-        icon("move", lib = "glyphicon"),
-        tags$b("Pan"),
-        " - adjust the axes of the graph by clicking this button
-        and then clicking and moving your mouse in any direction
-        you want."
-      ),
-      tags$li(
-        icon("home"),
-        tags$b("Reset axes"),
-        " - click this button to return the axes to their
-        default range."
-      )
-      ),
+      h4(
+        "Visualise drug-related hospital activity over time and make 
+        comparisons between different drug types. "
+      )),
+
+      bs_accordion(id = "drhs_drugs_comparison_text") %>% 
+        bs_set_opts(panel_type = "primary") %>%
+        bs_append(title = "Selection information", 
+                  content = p(
+                    "The charts can be modified using the drop down boxes", 
+                    tags$ul(
+                      tags$li("Hospital type: general acute or psychiatric 
+                              hospital data (or a combination);"),
+                      tags$li("Clinical type: mental & behavioural stays, 
+                              accidental poisoning/overdose stays (or a combination);"),
+                      tags$li("Activity type: Stays, patients or new patients; "),
+                      tags$li("Location: data from Scotland, specific NHS
+                              Boards or Alcohol and Drug Partnerships;"),
+                      tags$li("Drug type: the type of drug associated with the 
+                              stay (multiple selection) (opioid sub categories are available if overdoses
+                              are selected as Clinical type); and"),
+                      tags$li("Measure: Numbers, rates or percentages.")
+                      ), 
+                    "To download your data selection as a CSV file, use the
+                    'Download data' button under the filters.", 
+                    br(),br(),
+                    "For technical information, please see the Introduction page."
+                      ))%>%
+        bs_append(title = "Chart functions", 
+                  content = p("At the top-right corner of the 
+                              graph, you will see a toolbar with four buttons:",
+                              tags$ul(
+                                tags$li(
+                                  icon("camera"),
+                                  tags$b("Download plot as a png"),
+                                  " - click this button to save the graph as an image
+                                  (please note that Internet Explorer does not support this
+                                  function)."
+                                ),
+                                tags$li(
+                                  icon("search"),
+                                  tags$b("Zoom"),
+                                  " - zoom into the graph by clicking this button and then
+                                  clicking and dragging your mouse over the area of the
+                                  graph you are interested in."
+                                ),
+                                tags$li(
+                                  icon("move", lib = "glyphicon"),
+                                  tags$b("Pan"),
+                                  " - adjust the axes of the graph by clicking this button
+                                  and then clicking and moving your mouse in any direction
+                                  you want."
+                                ),
+                                tags$li(
+                                  icon("home"),
+                                  tags$b("Reset axes"),
+                                  " - click this button to return the axes to their
+                                  default range."
+                                )
+                                ),"Categories can be shown/hidden by clicking on labels in the
+                  legend to the right of each chart."
+                                )
+                  )%>%
+        bs_append(title = "Table functions", 
+                  content = p(HTML("To view 
+                                   your data selection in a table, use the <a href = '#substances_link'> 
+                                   'Show/hide table' </a>  button at the
+                                   bottom of the page."),
+                              tags$ul(
+                                tags$li(tags$b("Show entries"), " - change the number of rows shown
+                                        in the table using the drop-down box"),
+                                tags$li(tags$b("Search"), " - enter text to search data for a specific word or
+                                        numerical value."),
+                                tags$li(icon("sort", lib = "glyphicon"),
+                                        tags$b("Sort"), " - click to sort the table in ascending or 
+                                        descending order based on the values in a column"),
+                                tags$li(tags$b("Page controls"), " - switch to specific page of data 
+                                        within the table.")
+                                )
+                                )),
     
     p(
-      br(),
       tags$b(
         "Note: Statistical disclosure control has been applied to protect
         patient confidentiality. Therefore, the figures presented here
-        may not be additive and may differ to previous
-        sources of information."
+        may not be additive and may differ from previous publications."
       )
       ),
     
@@ -805,83 +837,118 @@ tabPanel(
   h3("Age/sex"),
   
   p(
-    HTML("This section allows users to visualise drug-related hospital 
-         activity on the basis of the age and sex of patients. Information 
-         is available for Scotland level and for financial years 1996/97 to 2017/18."),
-    br(),
-    br(),
-    HTML("Use the filters to visualise the data you are interested in. 
-         Opioid sub categories are available if overdoses are selected as 
-         clinical type. New patient trends are available from 2006/07. The toggle
-         buttons allow the data to be visualised in two ways:")
-    
-    ),
+    h4("Visualise drug-related hospital activity over time by patient 
+         age group and sex (Scotland level only).")),
 
-  tags$ul(
-    tags$li(
-      tags$b("Line chart"),
-      icon("line-chart"),
-      " - displays drug-related hospital patient trends for specific age and 
+  bs_accordion(id = "drhs_age_sex_text") %>% 
+    bs_set_opts(panel_type = "primary") %>%
+    bs_append(title = "Selection information", 
+              content = p("The toggle buttons allow 
+         the data to be visualised in two ways:",
+                          
+                          
+                          tags$ul(
+                            tags$li(
+                              tags$b("Line chart"),
+                              icon("line-chart"),
+                              " - displays drug-related hospital patient trends for specific age and 
       sex groups over time. Select sex or age groups from the drop down menus.
       Multiple groups can be shown on the chart simultaneously. Individual trend 
       lines can be hidden by clicking on the labels shown in the chart legend."
-    ),
-    tags$li(
-      tags$b("Bar Chart "),
-      icon("bar-chart"),
-      " - shows annual breakdowns of drug-related hospital patients by age and sex.
+                            ),
+                            tags$li(
+                              tags$b("Bar Chart "),
+                              icon("bar-chart"),
+                              " - shows annual breakdowns of drug-related hospital patients by age and sex.
       Use the slider to control which year to look at, or use the play button to 
       see changes over time."
-    )),
-p(HTML("To view your data selection in a table, use the 
-         <a href = '#age_and_sex_link'> 'Show/hide table' </a> button at 
-         the bottom of the page. To download your data selection as a CSV 
-         file, use the 'Download data' button under the filters. At the 
-         top-right corner of the graph, you will see a toolbar with four 
-         buttons:")),
-  
-  tags$ul(
-    tags$li(
-      icon("camera"),
-      tags$b("Download plot as a png"),
-      " - click this button to save the graph as an image
-      (please note that Internet Explorer does not support this
-      function)."
-    ),
-    
-    tags$li(
-      icon("search"),
-      tags$b("Zoom"),
-      " - zoom into the graph by clicking this button and then
-      clicking and dragging your mouse over the area of the
-      graph you are interested in."
-    ),
-    
-    tags$li(
-      icon("move", lib = "glyphicon"),
-      tags$b("Pan"),
-      " - adjust the axes of the graph by clicking this button
-      and then clicking and moving your mouse in any direction
-      you want."
-    ),
-    
-    tags$li(
-      icon("home"),
-      tags$b("Reset axes"),
-      " - click this button to return the axes to their
-      default range."
-    )
-    ),
-  
-  p(
-    br(),
-    tags$b(
-      "Note: Statistical disclosure control has been applied to protect
-      patient confidentiality. Therefore, the figures presented here
-      may not be additive and may differ to previous
-      sources of information."
-    )
-    ),
+                            )),
+                          
+                p("The charts can be modified using the drop down boxes"), 
+               p( tags$ul(style = "width:50%; float:left;",
+                  tags$li("Hospital type: general acute or psychiatric 
+                          hospital data (or a combination);"),
+                  tags$li("Clinical type: mental & behavioural stays, 
+                          accidental poisoning/overdose stays (or a combination);"),
+                  tags$li("Activity type: Stays, patients or new patients;"),
+                  tags$li("Drug type: the type of drug associated with the 
+                          stay (multiple selection) (opioid sub categories are available if overdoses
+                          are selected as Clinical type);")
+                  
+                ),
+                tags$ul(style = "width:50%; float:left;",
+                  tags$li("Measure: Numbers, rates or percentages;"),
+                  tags$li("Age group (Line chart only): Patient age (multiple selection);"),
+                  tags$li("Sex (Line chart only): Patient sex (multiple selection); and,"),
+                  tags$li("Financial year (Bar chart only): Use the slider to select 
+                          year. Use the play button to visualise changes over time.")
+                  )), 
+                p(style = "width:100%; float:left;",
+"To download your data selection as a CSV file, use the
+                'Download data' button under the filters.", 
+                br(),br(),
+                "For technical information, please see the Introduction page.")
+                  ))%>%
+    bs_append(title = "Chart functions", 
+              content = p("At the top-right corner of the 
+                          graph, you will see a toolbar with four buttons:",
+                          tags$ul(
+                            tags$li(
+                              icon("camera"),
+                              tags$b("Download plot as a png"),
+                              " - click this button to save the graph as an image
+                              (please note that Internet Explorer does not support this
+                              function)."
+                            ),
+                            tags$li(
+                              icon("search"),
+                              tags$b("Zoom"),
+                              " - zoom into the graph by clicking this button and then
+                              clicking and dragging your mouse over the area of the
+                              graph you are interested in."
+                            ),
+                            tags$li(
+                              icon("move", lib = "glyphicon"),
+                              tags$b("Pan"),
+                              " - adjust the axes of the graph by clicking this button
+                              and then clicking and moving your mouse in any direction
+                              you want."
+                                ),
+                                tags$li(
+                                  icon("home"),
+                                  tags$b("Reset axes"),
+                                  " - click this button to return the axes to their
+                                  default range."
+                                )
+                                ),"Categories can be shown/hidden by clicking on labels in the
+                          legend to the right of each chart."
+                                )
+                  )%>%
+        bs_append(title = "Table functions", 
+                  content = p(HTML("To view 
+                                   your data selection in a table, use the <a href = '#age_and_sex_link'> 
+                                   'Show/hide table' </a> button at the
+                                   bottom of the page."),
+                              tags$ul(
+                                tags$li(tags$b("Show entries"), " - change the number of rows shown
+                                        in the table using the drop-down box"),
+                                tags$li(tags$b("Search"), " - enter text to search data for a specific word or
+                                        numerical value."),
+                                tags$li(icon("sort", lib = "glyphicon"),
+                                        tags$b("Sort"), " - click to sort the table in ascending or 
+                                        descending order based on the values in a column"),
+                                tags$li(tags$b("Page controls"), " - switch to specific page of data 
+                                        within the table.")
+                                )
+                                )),
+
+p(
+  tags$b(
+    "Note: Statistical disclosure control has been applied to protect
+    patient confidentiality. Therefore, the figures presented here
+    may not be additive and may differ from previous publications."
+  )
+  ),
   
   p(""),
   
@@ -1093,62 +1160,92 @@ tabPanel(
   ),
   h3("Deprivation"),
   p(
-    HTML(
-      "This section allows users to visualise drug-related hospital activity 
-      on the basis of the deprivation group of patients. Information is available 
-      for Scotland level and for financial years 1996/97 to 2017/18. "
-    ),
-    br(),
-    br(),
-    HTML("Use the filters to visualise the data you are interested in. Opioid sub
-         categories are available if overdoses are selected as Clinical type. New 
-         patient trends are available from 2006/07."),
-    br(),
-    br(),
-    HTML("To view your data selection in a table,
-      use the <a href = '#SIMD_link'> 'Show/hide table' </a>  button at the
-      bottom of the page. To download your data selection as a CSV file, use the
-      'Download data' button under the filters. At the top-right corner of the 
-      graph, you will see a toolbar with four buttons:")
-    ),
-  
-  tags$ul(
-    tags$li(
-      icon("camera"),
-      tags$b("Download plot as a png"),
-      " - click this button to save the graph as an image
-      (please note that Internet Explorer does not support this
-      function)."
-    ),
-    tags$li(
-      icon("search"),
-      tags$b("Zoom"),
-      " - zoom into the graph by clicking this button and then
-      clicking and dragging your mouse over the area of the
-      graph you are interested in."
-    ),
-    tags$li(
-      icon("move", lib = "glyphicon"),
-      tags$b("Pan"),
-      " - adjust the axes of the graph by clicking this button
-      and then clicking and moving your mouse in any direction
-      you want."
-    ),
-    tags$li(
-      icon("home"),
-      tags$b("Reset axes"),
-      " - click this button to return the axes to their
-      default range."
-    )
-    ),
+    h4(
+      "Visualise drug-related hospital activity over time by patient 
+      deprivation quintile (Scotland level only)."
+    )),
+    
+    bs_accordion(id = "drhs_deprivation_text") %>% 
+      bs_set_opts(panel_type = "primary") %>%
+      bs_append(title = "Selection information", 
+                content = p("The charts can be modified using the drop down boxes", 
+                           tags$ul(
+                                       tags$li("Hospital type: general acute or psychiatric 
+                                               hospital data (or a combination);"),
+                                       tags$li("Clinical type: mental & behavioural stays, 
+                                               accidental poisoning/overdose stays (or a combination);"),
+                                       tags$li("Activity type: Stays, patients or new patients;"),
+                                       tags$li("Drug type: the type of drug associated with the 
+                                               stay (multiple selection) (opioid sub categories are available if overdoses
+                                               are selected as Clinical type);"),
+                                       tags$li("Financial year; and"),
+                                       tags$li("Measure: Numbers, rates or percentages.")
+                                       ), 
+                            p(
+                              "To download your data selection as a CSV file, use the
+                              'Download data' button under the filters.", 
+                              br(),br(),
+                              "For technical information, please see the Introduction page.")
+                              ))%>%
+      bs_append(title = "Chart functions", 
+                content = p("At the top-right corner of the 
+                            graph, you will see a toolbar with four buttons:",
+                            tags$ul(
+                              tags$li(
+                                icon("camera"),
+                                tags$b("Download plot as a png"),
+                                " - click this button to save the graph as an image
+                                (please note that Internet Explorer does not support this
+                                function)."
+                              ),
+                              tags$li(
+                                icon("search"),
+                                tags$b("Zoom"),
+                                " - zoom into the graph by clicking this button and then
+                                clicking and dragging your mouse over the area of the
+                                graph you are interested in."
+                              ),
+                              tags$li(
+                                icon("move", lib = "glyphicon"),
+                                tags$b("Pan"),
+                                " - adjust the axes of the graph by clicking this button
+                                and then clicking and moving your mouse in any direction
+                                you want."
+                                ),
+                                tags$li(
+                                  icon("home"),
+                                  tags$b("Reset axes"),
+                                  " - click this button to return the axes to their
+                                  default range."
+                                )
+                                ),"Categories can be shown/hidden by clicking on labels in the
+                            legend to the right of each chart."
+                                )
+                  )%>%
+        bs_append(title = "Table functions", 
+                  content = p(HTML("To view 
+                                   your data selection in a table, use the <a href = '#SIMD_link'> 
+                                   'Show/hide table' </a> button at the
+                                   bottom of the page."),
+                              tags$ul(
+                                tags$li(tags$b("Show entries"), " - change the number of rows shown
+                                        in the table using the drop-down box"),
+                                tags$li(tags$b("Search"), " - enter text to search data for a specific word or
+                                        numerical value."),
+                                tags$li(icon("sort", lib = "glyphicon"),
+                                        tags$b("Sort"), " - click to sort the table in ascending or 
+                                        descending order based on the values in a column"),
+                                tags$li(tags$b("Page controls"), " - switch to specific page of data 
+                                        within the table.")
+                                )
+                                )),
+
   
   p(
-    br(),
     tags$b(
       "Note: Statistical disclosure control has been applied to protect
       patient confidentiality. Therefore, the figures presented here
-      may not be additive and may differ to previous
-      sources of information."
+      may not be additive and may differ from previous publications."
     )
     ),
   
@@ -1260,33 +1357,40 @@ tabPanel(
     h3("RESTRICTED STATISTICS: embargoed to 09:30 28/05/2019", style = "color:red")
   ),
   h3("Table"), 
-  p(
-    
+  h4(
+    "View and customise data tables used in the Trend Data and Data Explorer 
+    dashboards and other data not visualised."
   ),
   
   p(
     HTML(
-      "This section allows users to view the data in table format. 
-       Use the filter below to access tabular information for the dataset you are
-       interested in. The list includes datasets used in both the 'Data trends' 
-       and ‘Data Explorer’ pages. The list also includes data not visualised in 
-       this dashboard (Length of stay, Emergency admissions and Drug type by hospital).
-      " ), 
-   br(),
-   br(),
-    HTML("You can then use the 
-    filters situated below the column names of the table to modify the data table. 
-    To download your data selection as a CSV file, use the 
-    'Download data' button.")
-    ),
+      "Use the Data file drop down box to view a data table.
+      " )),
+  bs_accordion(id = "drhs_table_text") %>% 
+    bs_set_opts(panel_type = "primary") %>%
+    bs_append(title = "Table functions", 
+              content = p(tags$ul(
+                            tags$li(icon("download-alt", lib = "glyphicon"),
+                                    tags$b("Download Data"), " - save the table data to your device 
+                                    within the table."),
+                            tags$li(icon("sort", lib = "glyphicon"),
+                                    tags$b("Sort"), " - click to sort the table in ascending or 
+                                    descending order based on the values in a column"),
+                            tags$li(tags$b("Filter"), " – click the grey boxes below column titles 
+                                           to select categories shown in the table (for columns 
+                                           with numerical data, use the slider to select the 
+                                           range of values to be shown)."),
+                            tags$li(tags$b("Page controls"), " - switch to specific page of data 
+                                    within the table.")
+                            )
+                            )),
+  
   
   p(
-    br(),
     tags$b(
-      "Note: Statistical disclosure control has been applied to protect 
-      patient confidentiality. Therefore, the figures presented here 
-      may not be additive and may differ to previous 
-      sources of information."
+      "Note: Statistical disclosure control has been applied to protect
+      patient confidentiality. Therefore, the figures presented here
+      may not be additive and may differ from previous publications."
     )
     ),
   
@@ -1726,7 +1830,7 @@ tabPanel(
                   rownames = FALSE,
                   style = "Bootstrap"
         ) %>% 
-          formatRound(columns = -1, digits = ifelse(input$Measure =="Number",0,2))
+          formatRound(columns = 8, digits = ifelse(input$Measure =="Number",0,2))
     
       })
       
@@ -2083,7 +2187,7 @@ tabPanel(
                                input$Measure2),
                   rownames = FALSE,
                   style = "Bootstrap") %>% 
-          formatRound(columns = -1, 
+          formatRound(columns = 8, 
                       digits = ifelse(input$Measure2 =="Number",0,2))
       })
         
@@ -2404,7 +2508,7 @@ tabPanel(
               input$Measure3
             )
           ) %>% 
-            formatRound(columns = -1, 
+            formatRound(columns = 8, 
                         digits = ifelse(input$Measure3 =="Number",0,2))
         })
         
@@ -2779,7 +2883,7 @@ tabPanel(
               input$Measure3
             )
           ) %>% 
-            formatRound(columns = -1,
+            formatRound(columns = 8,
                         digits = ifelse(input$Measure3 =="Number",0,2))
         })
         
@@ -3048,7 +3152,7 @@ tabPanel(
               input$Measure4
             )
           ) %>% 
-            formatRound(columns = -1, 
+            formatRound(columns = 7, 
                         digits = ifelse(input$Measure4 =="Number",0,2))
         })
         
