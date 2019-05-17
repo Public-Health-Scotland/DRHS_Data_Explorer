@@ -274,6 +274,15 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
 )
           ),
 
+#We will add in a title panel title as well as ISD logo. 
+titlePanel(title=div(img(src="ISD_NSS_logos.png",height = 96,
+                         width = 223,
+                         style = "float:right;"),
+                     h1("Drug-Related Hospital Stays"),
+                     h4("Drug and Alcohol Misuse"), 
+                     style = "height:96px;")),
+
+
 #We are going to divide our UI into discrete sections, called tab panels.
 #To do this, we need the layout "tabsetPanel()".
 
