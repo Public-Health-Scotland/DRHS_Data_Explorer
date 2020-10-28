@@ -35,7 +35,7 @@ library(bsplus)
 
 #Data to be used for explorer and trend pages
 #Following is rounded data
-all_data<- readRDS("s06-temp09_num_rate_perc_R-SHINY_rounded.RDS")
+all_data<- readRDS("s06-temp10_num_rate_perc_R-SHINY_rounded.RDS")
 #need to rename the final column as value
 all_data<-all_data %>% 
   rename("value" = value_Round)
@@ -51,11 +51,11 @@ all_data<-all_data %>%
   mutate(hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
+                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
-                                   "Overdose (OD)" = "Overdose",
-                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+                                   "Mental & behavioural" = "Mental and Behavioural",
+                                   "Overdose" = "Overdose",
+                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
          drug_type = fct_recode(drug_type, "Any drug type" = "All"),
          age_group = fct_recode(age_group, "All age groups" = "All"),
          sex = fct_recode(sex, "Both sexes" = "All"))
@@ -84,19 +84,27 @@ time_trend <- all_data %>%
   filter(age_group == "All age groups",
          sex == "Both sexes", 
          simd == "All") %>% 
-  select(-c(age_group,sex,simd))
+  mutate(drug_type = fct_relevel(drug_type, "Any drug type","Cannabinoids","Cocaine","Multiple/Other","Other Stimulants","Sedatives/Hypnotics",
+                                 "Opioids", "Heroin","Methadone","Other opioids" ))%>% 
+  select(-c(age_group,sex,simd,output))
 
 age_sex <- all_data %>% 
   filter(geography =="Scotland", 
          simd== "All"
          ) %>% 
-  select(-c(simd, geography_type,geography)) 
+  select(-c(simd, geography_type,geography,output)) 
 
 deprivation <- all_data %>% 
-  filter(geography =="Scotland", 
-          simd != "All") %>% 
-  select(-c(age_group,sex, geography_type,geography))
+  filter(simd != "All",
+         output == 1.04) %>% 
+  select(-c(age_group,sex,output)) %>% 
+  droplevels()
 
+deprivation_local <- all_data %>% 
+  filter(simd != "All",
+         output == 1.06) %>% 
+  select(-c(age_group,sex,output)) %>% 
+  droplevels()
 
 #We then create the options for users to choose from in the drop down menus. 
 #Drug Types are created as list to allow different options dependent on the 
@@ -110,6 +118,10 @@ location_types <- as.character(unique(all_data$geography_type))
 locations<- as.character(unique(all_data$geography))
 
 geography_list<-list("Scotland" = locations[1:3],
+                     "NHS Board of residence" = locations[4:17],
+                     "ADP of residence" = locations[18:48])
+
+geography_deprivation_list<-list("Scotland" = locations[1],
                      "NHS Board of residence" = locations[4:17],
                      "ADP of residence" = locations[18:48])
 
@@ -194,11 +206,11 @@ length_of_stay <- length_of_stay %>%
          hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
+                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
-                                   "Overdose (OD)" = "Overdose",
-                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+                                   "Mental & behavioural" = "Mental and Behavioural",
+                                   "Overdose" = "Overdose",
+                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
          drug_type = fct_recode (drug_type, 
                                  "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
                                  "Any drug type" = "All"),
@@ -212,11 +224,11 @@ emergency_admissions <- emergency_admissions %>%
          hospital_type= fct_recode(hospital_type, 
                                    "General acute"= "General acute (SMR01)",
                                    "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
+                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
-                                   "Overdose (OD)" = "Overdose",
-                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+                                   "Mental & behavioural" = "Mental and Behavioural",
+                                   "Overdose" = "Overdose",
+                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
                  drug_type = fct_recode (drug_type, 
                                  "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
                                  "Any drug type" = "All"),
@@ -230,11 +242,11 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
          perc_source04 = round(perc_source04, 2), 
          perc_sourceBOTH = round(perc_sourceBOTH, 2),
          hospital_type= fct_recode(hospital_type, 
-                                   "Combined gen acute/psych" = "Combined (General acute/Psychiatric)"),
+                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
          clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural (M&B)" = "Mental and Behavioural",
-                                   "Overdose (OD)" = "Overdose",
-                                   "Combined M&B/OD" = "Combined (Mental and Behavioural/Overdose)"),
+                                   "Mental & behavioural" = "Mental and Behavioural",
+                                   "Overdose" = "Overdose",
+                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
          drug_type = fct_recode (drug_type, 
                                  "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
                                  "Any drug type" = "All"))
@@ -253,26 +265,28 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
           ".shiny-output-error { visibility: hidden; }",
           ".shiny-output-error:before { visibility: hidden; }"
         ),
+        tags$head(
+          tags$script(src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/3.5.16/iframeResizer.contentWindow.min.js",
+                      type="text/javascript")
+        ),
+        
         
         #The following chunk of code does two things:
         # 1. Paints the ribbon that contains the tab headers white.
         # 2. Highlights the header of the active tab in blue.
-
+        
         
         tags$style(
           HTML("
-        .tabbable > .nav > li > a {color: #000000;}
+        .tabbable > .nav > li > a {background-color: #def0ff; color: #000000;}
         .tabbable > .nav > li[class = active] > a {background-color: #0072B2;color: #FFFFFF;}
             ")
 )
           ),
 
-#We will add in a title panel title as well as ISD logo. 
-titlePanel(title=div(img(src="ISD_NSS_logos.png",height = 96,
-                         width = 223,
-                         style = "float:right;"),
-                     h1("Drug-Related Hospital Statistics"),
-                     h4("Drug and Alcohol Misuse"), 
+#We will add in a title panel title. 
+titlePanel(title=div(h1("Drug-Related Hospital Statistics"),
+                     h4("Substance Use"), 
                      style = "height:96px;"),
            windowTitle = "Drug-Related Hospital Statistics"),
 
@@ -298,9 +312,7 @@ tabsetPanel(
     style = "float: top; height: 95%; width: 95%;
     background-color: #FFFFFF; border: 0px solid #FFFFFF;",
 
-    column(2,
-           h3("Data explorer")
-    ),
+    column(2),
     column(
       8,
       p(
@@ -312,7 +324,7 @@ tabsetPanel(
       tags$ul(
         tags$li(
           tags$b(actionLink(
-            "link_to_geography", "Time trend (location comparison)"
+            "link_to_geography", "Location comparison"
           )),
           icon("line-chart"),
           " - compare data by location, over time."
@@ -320,7 +332,7 @@ tabsetPanel(
       
         tags$li(
           tags$b(actionLink(
-            "link_to_substances", "Time trend (drug type comparison)"
+            "link_to_substances", "Drug type comparison"
           )),
           icon("line-chart"),
           " - compare data by drug type, over time."
@@ -341,28 +353,24 @@ tabsetPanel(
       ),
       tags$li(
         tags$b(actionLink(
-          "link_to_table", "Table"
+          "link_to_table", "Data"
         )),
         icon("table"),
         " - view and customise data tables."
       )
       ),
       
-      p(
-        "Click the button below to download the glossary."
-      ),
-      
       p("A less detailed overview of drug-related hospital stays in Scotland 
         over time is available in the",
         tags$a(
-          href = "https://scotland.shinyapps.io/nhs-drhs-trend-data/", 
+          href = "https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/trend-data/", 
           "Trend data"
         ),
         " page"),
       
       bs_accordion(id = "drhs_introduction_text") %>% 
         bs_set_opts(panel_type = "primary") %>%
-        bs_append(title = "Technical information", 
+        bs_append(title = tags$u("Technical information"), 
                   content = 
                     tags$ul( 
                       tags$li(
@@ -372,8 +380,8 @@ tabsetPanel(
                         activity."
                       ),
                       tags$li(
-                        "Information is generally available for financial years 1996/97 to 2017/18.
-                        Where shown, ADP information is available from 1997/98 and new patient trends 
+                        "Information is generally available for financial years 1996/97 to 2018/19.
+                        Where shown, Alcohol and Drug Partnership (ADP) information is available from 1997/98 and new patient trends 
                         are available from 2006/07."
                       ),
                       tags$li(
@@ -392,8 +400,8 @@ tabsetPanel(
           Classification of Diseases and Related Health Problems, 10th Edition
           (ICD-10). ICD-10 codes used to classify drug-related hospital stays 
           are listed in Appendix 1 (see Analytical definitions) in the ",
-          HTML(paste0('<a href="https://www.isdscotland.org/Health-Topics/Drugs-and-Alcohol-Misuse/Publications/2019-05-28/2019-05-28-DRHS-Report.pdf">full report</a>.'))," 
-          Note that patients may have more than one
+          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/methods/">methods section</a>.')),
+          "Note that patients may have more than one
           drug-related diagnosis per stay." 
           
         ),
@@ -402,29 +410,23 @@ tabsetPanel(
           confidentiality. Therefore, the figures presented in this dashboard may 
           not be additive and may differ from previous publications.  
           For more information, please refer to the  ",
-          HTML(paste0('<a href="http://www.isdscotland.org/About-ISD/Confidentiality/disclosure_protocol_v3.pdf">NSS Statistical Disclosure Control Protocol</a>.'))
+          HTML(paste0('<a href="https://beta.isdscotland.org/front-matter/data-protection-and-confidentiality/">PHS Statistical Disclosure Control Protocol</a>.'))
         ), 
         tags$li(
           "Further technical details can be seen on the ",
-          tags$a(href = "https://www.isdscotland.org/Health-Topics/Drugs-and-Alcohol-Misuse/Publications/2019-05-28/data-overview.asp","Data overview"),
-          " webpage."  
+          tags$a(href = "https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/","Data overview"),
+          " webpage. Technical terms are explained in the ", 
+          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/glossary/">Glossary</a>.'))
         )
         
       )
       ),
-      downloadButton(outputId = "download_glossary1", 
-                     label = "Download glossary", 
-                     class = "glossary"),
-      tags$head(
-        tags$style(".glossary { background-color: #0072B2; } 
-                   .glossary { color: #FFFFFF; }")
-        ),
       
       p(
         br(),
         "If you experience any problems using this dashboard or have further
       questions relating to the data, please contact us at:",
-        HTML(paste0('<b> <a href="mailto:NSS.isdsubstancemisuse@nhs.net">NSS.isdsubstancemisuse@nhs.net</a></b>.'))
+        HTML(paste0('<b> <a href="mailto:phs.drugsteam@phs.scot">phs.drugsteam@phs.scot</a></b>.'))
       )
       
       #End of column 8 part
@@ -440,12 +442,12 @@ tabsetPanel(
   #Insert the description a
   
   tabPanel(
-    "Time trend (location comparison)",
+    "Location comparison",
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
 
-    h3("Time trend (location comparison)"),
+    h3("Location comparison"),
     
     p(
       h4(
@@ -455,57 +457,42 @@ tabsetPanel(
     
     bs_accordion(id = "drhs_location_comparison_text") %>% 
       bs_set_opts(panel_type = "primary") %>%
-      bs_append(title = "Data selection", 
+      bs_append(title = tags$u("Data selection"), 
                 content = p(
                   "The chart can be modified using the drop down boxes:", 
                   tags$ul(
                     tags$li("Hospital type: general acute or psychiatric 
-                            hospital data (or a combination);"),
-                    tags$li("Clinical type: mental & behavioural stays, 
-                            accidental poisoning/overdose stays (or a combination);"),
+                            hospital data (or any hospital type);"),
+                    tags$li("Diagnosis grouping: mental & behavioural stays, 
+                            accidental poisoning/overdose stays (or any diagnosis);"),
                     tags$li("Activity type: stays, patients or new patients;"),
                     tags$li("Location: data from Scotland, specific NHS
                             Boards or Alcohol and Drug Partnerships 
                             (choose up to 8 locations);"),
                     tags$li("Drug type: the type of drug associated with the 
                             stay (opioid sub categories are available if overdoses
-                            are selected as Clinical type); and,"),
+                            are selected as diagnosis grouping); and,"),
                     tags$li("Measure: numbers, rates or percentages.")
                   ), 
                   "To download your data selection as a CSV file, use the
-                  'Download data' button under the filters.", 
+                  'Download data' button under the drop down boxes.", 
                   br(),br(),
-                  "For technical information, please see the Introduction page."
+                  "For technical information, please see the",
+                  actionLink(
+                    "link_to_home", "introduction"
+                  ), " page."
                 ))%>%
-      bs_append(title = "Chart functions", 
-                content = p("At the top-right corner of the 
-        chart, you will see a toolbar with four buttons:",
-                            tags$ul(
-                              tags$li(
-                                icon("camera"),
-                                tags$b("Download plot as a png"),
-                                " - save an image of the chart (not available in Internet Explorer)."
-                              ),
-                              tags$li(
-                                icon("search"),
-                                tags$b("Zoom"),
-                                " - click and drag within the chart area to focus on a specific part."
-                              ),
-                              tags$li(
-                                icon("move", lib = "glyphicon"),
-                                tags$b("Pan"),
-                                " - click and move the mouse in any direction to modify the chart axes."
-                              ),
-                              tags$li(
-                                icon("home"),
-                                tags$b("Reset axes"),
-                                " - click this button to return the axes to their default range."
-                              )
-                            ),"Categories can be shown/hidden by clicking on labels in the
-                  legend to the right of the chart."
-                )
+      bs_append(title = tags$u("Chart functions"), 
+                content = p("At the top-right corner of the chart, you will see a ",
+                            icon("camera"), "icon: use this to save an image of the chart ",
+                            HTML(paste0("(",tags$b("not"))), 
+                            tags$b("available in Internet "),
+                            HTML(paste0(tags$b("Explorer"),").")),
+                            br(),br(),
+                            "Categories can be shown/hidden by clicking on labels in the
+                            legend to the right of the chart.")
                 )%>%
-      bs_append(title = "Table functions", 
+      bs_append(title = tags$u("Table functions"), 
                 content = p(HTML("To view 
         your data selection in a table, use the <a href = '#geography_link'> 
                             'Show/hide table' </a>  button at the
@@ -529,13 +516,6 @@ tabsetPanel(
         may not be additive and may differ from previous publications."
       )
       ),
-    downloadButton(outputId = "download_glossary2", 
-                   label = "Download glossary", 
-                   class = "glossary"),
-    tags$head(
-      tags$style(".glossary { background-color: #0072B2; } 
-                   .glossary { color: #FFFFFF; }")
-    ),
     
     p(""),
     
@@ -573,17 +553,7 @@ tabsetPanel(
                          `count-selected-text` = "{0} locations chosen (8 Max)",
                          "max-options" = 8,
                          "max-options-text" = "Only 8 options can be chosen")
-        ),
-        downloadButton(outputId = "download_geography", 
-                       label = "Download data", 
-                       class = "geographybutton"),
-        
-        tags$head(
-          tags$style(".geographybutton { background-color: 
-                   #0072B2; } 
-                   .geographybutton { color: #FFFFFF; }")
         )
-        
       ),
       
       column(
@@ -607,6 +577,16 @@ tabsetPanel(
           )
           )
       
+    ),
+    
+    downloadButton(outputId = "download_geography", 
+                   label = "Download data", 
+                   class = "geographybutton"),
+    
+    tags$head(
+      tags$style(".geographybutton { background-color: 
+                   #0072B2; } 
+                   .geographybutton { color: #FFFFFF; }")
     ),
     
     #In the main panel of the tab, insert the geography plot
@@ -636,12 +616,12 @@ tabsetPanel(
 ##############################################.
 
   tabPanel(
-    "Time trend (drug type comparison)",
+    "Drug type comparison",
     icon = icon("line-chart"),
     style = "height: 95%; width: 95%; background-color: #FFFFFF;
     border: 0px solid #FFFFFF;",
 
-    h3("Time trend (drug type comparison)"),
+    h3("Drug type comparison"),
     p(
       h4(
         "Visualise drug-related hospital activity over time and make 
@@ -650,56 +630,41 @@ tabsetPanel(
 
       bs_accordion(id = "drhs_drugs_comparison_text") %>% 
         bs_set_opts(panel_type = "primary") %>%
-        bs_append(title = "Data selection", 
+        bs_append(title = tags$u("Data selection"), 
                   content = p(
                     "The chart can be modified using the drop down boxes:", 
                     tags$ul(
                       tags$li("Hospital type: general acute or psychiatric 
-                              hospital data (or a combination);"),
-                      tags$li("Clinical type: mental & behavioural stays, 
-                              accidental poisoning/overdose stays (or a combination);"),
+                              hospital data (or any hospital type);"),
+                      tags$li("Diagnosis grouping: mental & behavioural stays, 
+                              accidental poisoning/overdose stays (or any diagnosis);"),
                       tags$li("Activity type: stays, patients or new patients; "),
                       tags$li("Location: data from Scotland, specific NHS
                               Boards or Alcohol and Drug Partnerships;"),
                       tags$li("Drug type: the type of drug associated with the 
                               stay (multiple selection) (opioid sub categories are available if overdoses
-                              are selected as Clinical type); and,"),
+                              are selected as diagnosis grouping); and,"),
                       tags$li("Measure: numbers, rates or percentages.")
                       ), 
                     "To download your data selection as a CSV file, use the
-                    'Download data' button under the filters.", 
+                    'Download data' button under the drop down boxes.", 
                     br(),br(),
-                    "For technical information, please see the Introduction page."
+                    "For technical information, please see the",
+                    actionLink(
+                      "link_to_home2", "introduction"
+                    ), " page."
                       ))%>%
-        bs_append(title = "Chart functions", 
-                  content = p("At the top-right corner of the 
-                              chart, you will see a toolbar with four buttons:",
-                              tags$ul(
-                                tags$li(
-                                  icon("camera"),
-                                  tags$b("Download plot as a png"),
-                                  " - save an image of the chart (not available in Internet Explorer)."
-                                ),
-                                tags$li(
-                                  icon("search"),
-                                  tags$b("Zoom"),
-                                  " - click and drag within the chart area to focus on a specific part."
-                                ),
-                                tags$li(
-                                  icon("move", lib = "glyphicon"),
-                                  tags$b("Pan"),
-                                  " - click and move the mouse in any direction to modify the chart axes."
-                                ),
-                                tags$li(
-                                  icon("home"),
-                                  tags$b("Reset axes"),
-                                  " - click this button to return the axes to their default range."
-                                )
-                              ),"Categories can be shown/hidden by clicking on labels in the
-                  legend to the right of the chart."
-                  )
-                  )%>%
-        bs_append(title = "Table functions", 
+      bs_append(title = tags$u("Chart functions"), 
+                content = p("At the top-right corner of the chart, you will see a ",
+                            icon("camera"), "icon: use this to save an image of the chart ",
+                            HTML(paste0("(",tags$b("not"))), 
+                            tags$b("available in Internet "),
+                            HTML(paste0(tags$b("Explorer"),").")),
+                            br(),br(),
+                            "Categories can be shown/hidden by clicking on labels in the
+                            legend to the right of the chart.")
+                )%>%
+        bs_append(title = tags$u("Table functions"), 
                   content = p(HTML("To view 
                                    your data selection in a table, use the <a href = '#substances_link'> 
                                    'Show/hide table' </a>  button at the
@@ -723,13 +688,6 @@ tabsetPanel(
         patient confidentiality. Therefore, the figures presented here
         may not be additive and may differ from previous publications."
       )
-      ),
-    downloadButton(outputId = "download_glossary3", 
-                   label = "Download glossary", 
-                   class = "glossary"),
-    tags$head(
-      tags$style(".glossary { background-color: #0072B2; } 
-                 .glossary { color: #FFFFFF; }")
       ),
     
     p(""),
@@ -763,16 +721,7 @@ tabsetPanel(
           selected = "Scotland",
           options = list(size=10, 
                          `live-search`=TRUE)
-        ),
-        downloadButton(outputId = "download_substances", 
-                       label = "Download data", 
-                       class = "substancesbutton"),
-        
-        tags$head(
-          tags$style(".substancesbutton { background-color: 
-                     #0072B2; } 
-                     .substancesbutton { color: #FFFFFF; }")
-          )
+        )
         
       ),
       
@@ -796,6 +745,16 @@ tabsetPanel(
           selected = "Rate"
         )
       )
+    ),
+    
+    downloadButton(outputId = "download_substances", 
+                   label = "Download data", 
+                   class = "substancesbutton"),
+    
+    tags$head(
+      tags$style(".substancesbutton { background-color: 
+                     #0072B2; } 
+                     .substancesbutton { color: #FFFFFF; }")
     ),
     
     #In the main panel of the tab, insert the substances plot
@@ -839,14 +798,14 @@ tabPanel(
 
   bs_accordion(id = "drhs_age_sex_text") %>% 
     bs_set_opts(panel_type = "primary") %>%
-    bs_append(title = "Data selection", 
+    bs_append(title = tags$u("Data selection"), 
               content = p("The toggle buttons allow 
          the data to be visualised in two ways:",
                           
                           
                           tags$ul(
                             tags$li(
-                              tags$b("Line chart"),
+                              tags$b("Time trend"),
                               icon("line-chart"),
                               " - displays trends for specific age and sex groups."
                             ),
@@ -859,57 +818,42 @@ tabPanel(
                 p("The charts can be modified using the drop down boxes:"), 
                p( tags$ul(style = "width:50%; float:left;",
                   tags$li("Hospital type: general acute or psychiatric 
-                          hospital data (or a combination);"),
-                  tags$li("Clinical type: mental & behavioural stays, 
-                          accidental poisoning/overdose stays (or a combination);"),
+                          hospital data (or any hospital type);"),
+                  tags$li("Diagnosis grouping: mental & behavioural stays, 
+                          accidental poisoning/overdose stays (or any diagnosis);"),
                   tags$li("Activity type: stays, patients or new patients;"),
                   tags$li("Drug type: the type of drug associated with the 
                           stay (multiple selection) (opioid sub categories are available if overdoses
-                          are selected as Clinical type);")
+                          are selected as diagnosis grouping);")
                   
                 ),
                 tags$ul(style = "width:50%; float:left;",
                   tags$li("Measure: numbers, rates or percentages;"),
-                  tags$li("Age group (Line chart only): patient age (multiple selection);"),
-                  tags$li("Sex (Line chart only): patient sex (multiple selection); and,"),
+                  tags$li("Age group (Time trend only): patient age (multiple selection);"),
+                  tags$li("Sex (Time trend only): patient sex (multiple selection); and,"),
                   tags$li("Financial year (Bar chart only): use the slider to select 
                           year or the play button to visualise changes over time.")
                   )), 
                 p(style = "width:100%; float:left;",
 "To download your data selection as a CSV file, use the
-                'Download data' button under the filters.", 
+                'Download data' button under the drop down boxes.", 
                 br(),br(),
-                "For technical information, please see the Introduction page.")
+"For technical information, please see the",
+actionLink(
+  "link_to_home3", "introduction"
+), " page.")
                   ))%>%
-    bs_append(title = "Chart functions", 
-              content = p("At the top-right corner of the 
-                          chart, you will see a toolbar with four buttons:",
-                          tags$ul(
-                            tags$li(
-                              icon("camera"),
-                              tags$b("Download plot as a png"),
-                              " - save an image of the chart (not available in Internet Explorer)."
-                            ),
-                            tags$li(
-                              icon("search"),
-                              tags$b("Zoom"),
-                              " - click and drag within the chart area to focus on a specific part."
-                            ),
-                            tags$li(
-                              icon("move", lib = "glyphicon"),
-                              tags$b("Pan"),
-                              " - click and move the mouse in any direction to modify the chart axes."
-                            ),
-                            tags$li(
-                              icon("home"),
-                              tags$b("Reset axes"),
-                              " - click this button to return the axes to their default range."
-                            )
-                          ),"Categories can be shown/hidden by clicking on labels in the
-                          legend to the right of the chart."
-              )
-                  )%>%
-        bs_append(title = "Table functions", 
+  bs_append(title = tags$u("Chart functions"), 
+            content = p("At the top-right corner of the chart, you will see a ",
+                        icon("camera"), "icon: use this to save an image of the chart ",
+                        HTML(paste0("(",tags$b("not"))), 
+                        tags$b("available in Internet "),
+                        HTML(paste0(tags$b("Explorer"),").")),
+                        br(),br(),
+                        "Categories can be shown/hidden by clicking on labels in the
+                            legend to the right of the chart.")
+  )%>%
+        bs_append(title = tags$u("Table functions"), 
                   content = p(HTML("To view 
                                    your data selection in a table, use the <a href = '#age_and_sex_link'> 
                                    'Show/hide table' </a> button at the
@@ -934,14 +878,7 @@ p(
     may not be additive and may differ from previous publications."
   )
   ),
-downloadButton(outputId = "download_glossary4", 
-               label = "Download glossary", 
-               class = "glossary"),
-tags$head(
-  tags$style(".glossary { background-color: #0072B2; } 
-                   .glossary { color: #FFFFFF; }")
-),
-
+  
   p(""),
   
   wellPanel(
@@ -991,7 +928,7 @@ tags$head(
             tabsetPanel(
     type = "pills",
     tabPanel(
-      "Time Trend",
+      "Time trend",
       tags$style(
         HTML("
            .tabbable > .nav > li > a[data-value = 'Bar Chart'] {background-color: #D3D3D3; color: #000000;}
@@ -1067,7 +1004,7 @@ tags$head(
       ),
     
     tabPanel(
-      "Bar Chart",
+      "Bar chart",
       icon = icon("bar-chart"),
       style = "height: 95%; width: 95%; background-color: #FFFFFF;
       border: 0px solid #FFFFFF;",
@@ -1080,12 +1017,12 @@ tags$head(
           inputId = "Financial_Year",
           label = "Financial year",
           choices = financial_years,
-          selected = "2017/18",
+          selected = "2018/19",
           grid = T,
-          animate = animationOptions(playButton =icon('play', 
-                                                      "fa fa-play-circle fa-2x"),
+          animate = animationOptions(playButton = icon('play', 
+                                                      "fa fa-play-circle fa-3x"),
                                      pauseButton = icon('pause', 
-                                                        "fa fa-pause-circle fa-2x")),
+                                                        "fa fa-pause-circle fa-3x")),
           width = "1090px"
           
         )
@@ -1108,6 +1045,7 @@ tags$head(
         )
       )
       ,
+      br(),
       br(),
       br(),
       br(),
@@ -1147,65 +1085,69 @@ tabPanel(
   icon = icon("bar-chart"),
   style = "height: 95%; width: 95%; background-color: #FFFFFF;
   border: 0px solid #FFFFFF;",
-  
+
   h3("Deprivation"),
   p(
     h4(
-      "Visualise drug-related hospital activity over time by patient 
-      deprivation quintile (Scotland level only)."
+      "Visualise drug-related hospital activity by patient deprivation quintile."
     )),
     
     bs_accordion(id = "drhs_deprivation_text") %>% 
       bs_set_opts(panel_type = "primary") %>%
-      bs_append(title = "Selection information", 
-                content = p("The charts can be modified using the drop down boxes:", 
+    bs_append(title = tags$u("Data selection"), 
+              content = p("The toggle buttons allow 
+         the data to be visualised in two ways:",
+                          
+                          
+                          tags$ul(
+                            tags$li(
+                              tags$b("Location comparison"),
+                              icon("globe-europe"),
+                              " - displays data based on national deprivation quintiles for comparisons between Scotland, NHS Boards and ADPs."
+                            ),
+                            tags$li(
+                              tags$b("Location profile"),
+                              icon("city"),
+                              " - displays the profile of an individual location (Scotland, NHS Board or ADP), based on local deprivation quintile data",
+                              tags$b("(not to be used for comparison of"),
+                              HTML(paste0(tags$b("locations)"),"."))
+                            )),
+                          p("For more information on deprivation analysis, and the difference between these two analyses please see the ",
+                          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/methods/">methods section</a>.'))),
+                          
+                          p("The charts can be modified using the drop down boxes:"), 
                            tags$ul(
                                        tags$li("Hospital type: general acute or psychiatric 
-                                               hospital data (or a combination);"),
-                                       tags$li("Clinical type: mental & behavioural stays, 
-                                               accidental poisoning/overdose stays (or a combination);"),
+                                               hospital data (or any hospital type);"),
+                                       tags$li("Diagnosis grouping: mental & behavioural stays, 
+                                               accidental poisoning/overdose stays (or any diagnosis);"),
                                        tags$li("Activity type: stays, patients or new patients;"),
                                        tags$li("Drug type: the type of drug associated with the 
                                                stay (multiple selection) (opioid sub categories are available if overdoses
-                                               are selected as Clinical type);"),
+                                               are selected as diagnosis grouping);"),
                                        tags$li("Financial year; and,"),
                                        tags$li("Measure: numbers, rates or percentages.")
                                        ), 
                             p(
                               "To download your data selection as a CSV file, use the
-                              'Download data' button under the filters.", 
+                              'Download data' button under the drop down boxes.", 
                               br(),br(),
-                              "For technical information, please see the Introduction page.")
+                              "For technical information, please see the",
+                              actionLink(
+                                "link_to_home4", "introduction"
+                              ), " page.")
                               ))%>%
-      bs_append(title = "Chart functions", 
-                content = p("At the top-right corner of the 
-                            chart, you will see a toolbar with four buttons:",
-                            tags$ul(
-                              tags$li(
-                                icon("camera"),
-                                tags$b("Download plot as a png"),
-                                " - save an image of the chart (not available in Internet Explorer)."
-                              ),
-                              tags$li(
-                                icon("search"),
-                                tags$b("Zoom"),
-                                " - click and drag within the chart area to focus on a specific part."
-                              ),
-                              tags$li(
-                                icon("move", lib = "glyphicon"),
-                                tags$b("Pan"),
-                                " - click and move the mouse in any direction to modify the chart axes."
-                              ),
-                              tags$li(
-                                icon("home"),
-                                tags$b("Reset axes"),
-                                " - click this button to return the axes to their
-                                  default range."
-                              )
-                            )
-                )
-                  )%>%
-        bs_append(title = "Table functions", 
+    bs_append(title = tags$u("Chart functions"), 
+              content = p("At the top-right corner of the chart, you will see a ",
+                          icon("camera"), "icon: use this to save an image of the chart ",
+                          HTML(paste0("(",tags$b("not"))), 
+                          tags$b("available in Internet "),
+                          HTML(paste0(tags$b("Explorer"),").")),
+                          br(),br(),
+                          "Categories can be shown/hidden by clicking on labels in the
+                            legend to the right of the chart.")
+    )%>%
+        bs_append(title = tags$u("Table functions"), 
                   content = p(HTML("To view 
                                    your data selection in a table, use the <a href = '#SIMD_link'> 
                                    'Show/hide table' </a> button at the
@@ -1231,13 +1173,6 @@ tabPanel(
       may not be additive and may differ from previous publications."
     )
     ),
-  downloadButton(outputId = "download_glossary5", 
-                 label = "Download glossary", 
-                 class = "glossary"),
-  tags$head(
-    tags$style(".glossary { background-color: #0072B2; } 
-                   .glossary { color: #FFFFFF; }")
-  ),
   
   p(""),
   
@@ -1261,20 +1196,7 @@ tabPanel(
              label = "Hospital type",
              choices = hospital_types
            ),
-           uiOutput("SIMD_substance"),
-
-           downloadButton(
-             outputId = "download_SIMD",
-             label = "Download data",
-             class = "mySIMDtrendbutton"
-           ),
-           tags$head(
-             tags$style(
-               ".mySIMDtrendbutton { background-color:
-               #0072B2; }
-               .mySIMDtrendbutton { color: #FFFFFF; }"
-             )
-           )
+           uiOutput("SIMD_substance")
     ),
     
     column(
@@ -1286,7 +1208,7 @@ tabPanel(
         inputId = "Financial_Year2",
         label = "Financial year",
         choices =  rev(financial_years),
-        selected = "2017/18")
+        selected = "2018/19")
       
 
     ),
@@ -1309,42 +1231,149 @@ tabPanel(
   
   
   #In the main panel of the tab, insert the SIMD plot
-  
-  mainPanel(
-    width =12,
-    plotlyOutput("SIMD_plot",
-                 width = "1090px",
-                 height = "500px"),
-    br(),
-    
-    
-    HTML(
-      "<button data-toggle = 'collapse' href = '#SIMDchart'
+  mainPanel(width = 12, 
+            tabsetPanel(
+              type = "pills",
+              
+              #First tab part with comparison 
+              tabPanel(
+                "Location comparison",
+                tags$style(
+                  HTML("
+                       .tabbable > .nav > li > a[data-value = 'Comparison'] {background-color: #D3D3D3; color: #000000;}
+                       .tabbable > .nav > li > a[data-value = 'Local'] {background-color: #D3D3D3; color: #000000;}
+                       .tabbable > .nav > li[class = active] > a {background-color: #0072B2;color: #FFFFFF;} 
+                       ") 
+                  ),
+                icon = icon("globe-europe"),
+                style = "height: 95%; width: 95%; background-color: #FFFFFF;
+                border: 0px solid #FFFFFF;",
+                br(),
+                br(),
+                column(
+                  4,
+                  shinyWidgets::pickerInput(
+                    inputId = "Location3",
+                    label = "Location (multiple selection)",
+                    choices = geography_deprivation_list,
+                    multiple = TRUE,
+                    selected = "Scotland",
+                    options = list(size=10, 
+                                   `live-search`=TRUE, 
+                                   `selected-text-format` = "count > 1", 
+                                   `count-selected-text` = "{0} locations chosen (8 Max)",
+                                   "max-options" = 8,
+                                   "max-options-text" = "Only 8 options can be chosen")
+                  )
+                ),          
+                column(4, br(),
+                       downloadButton(
+                  outputId = "download_SIMD",
+                  label = "Download data",
+                  class = "mySIMDtrendbutton"
+                ),
+                tags$head(
+                  tags$style(
+                    ".mySIMDtrendbutton { background-color:
+               #0072B2; }
+               .mySIMDtrendbutton { color: #FFFFFF; }"
+                  )
+                )),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                plotlyOutput("SIMD_plot",
+                             width = "1090px",
+                             height = "500px"),
+                br(),
+                HTML(
+                  "<button data-toggle = 'collapse' href = '#SIMDchart'
       class = 'btn btn-primary' id = 'SIMD_link'>
       <strong>Show/hide table</strong></button>"
-    ),
-    HTML("<div id = 'SIMDchart' class = 'collapse'>"),
-    br(),
-    dataTableOutput("SIMD_table"),
-    HTML("</div>"),
-    br(),
-    br()
+                ),
+                HTML("<div id = 'SIMDchart' class = 'collapse'>"),
+                br(),
+                dataTableOutput("SIMD_table"),
+                HTML("</div>"),
+                br(),
+                br()
+              ),
+            # Second tab part with the local within comparison
+            tabPanel(
+              "Location profile",
+              icon = icon("city"),
+              style = "height: 95%; width: 95%; background-color: #FFFFFF;
+              border: 0px solid #FFFFFF;",
+              br(),
+              br(),
+              
+              column(
+                4,
+                shinyWidgets::pickerInput(
+                  inputId = "Location4",
+                  label = "Location",
+                  choices = geography_deprivation_list,
+                  selected = "Scotland",
+                  options = list(size=10, 
+                                 `live-search`=TRUE)
+                )          
+              ),
+              column(4, br(),
+                     downloadButton(
+                       outputId = "download_SIMD_local",
+                       label = "Download data",
+                       class = "mySIMD_local_trendbutton"
+                     ),
+                     tags$head(
+                       tags$style(
+                         ".mySIMD_local_trendbutton { background-color:
+                         #0072B2; }
+                         .mySIMD_local_trendbutton { color: #FFFFFF; }"
+                       )
+                     )),
+              br(),
+              br(),
+              br(),
+              br(),
+              br(),
+              br(),
+              plotlyOutput("SIMD_local_plot",
+                           width = "1090px",
+                           height = "500px"),
+              br(),
+              HTML(
+                "<button data-toggle = 'collapse' href = '#SIMD_local_chart'
+      class = 'btn btn-primary' id = 'SIMD_local_link'>
+      <strong>Show/hide table</strong></button>"
+              ),
+              HTML("<div id = 'SIMD_local_chart' class = 'collapse'>"),
+              br(),
+              dataTableOutput("SIMD_local_table"),
+              HTML("</div>"),
+              br(),
+              br()
+            )
+        )
+  )
+#End of tab panel
+),
     
-    
-    )
-  ),
+
 
 ##############################################.
-############## Table tab ----
+############## Data tab ----
 ##############################################.
 
 tabPanel(
-  "Table", 
+  "Data", 
   icon = icon("table"), 
   style = "float: top; height: 95%; width: 95%; background-color: #FFFFFF; 
   border: 0px solid #FFFFFF;", 
 
-  h3("Table"), 
+  h3("Data"), 
   h4(
     "View and customise data tables used in the Trend data and Data explorer 
     dashboards and other data not visualised."
@@ -1352,18 +1381,18 @@ tabPanel(
   
   p(
     HTML(
-      "Use the Data file drop down box to view a data table.
+      "Use the 'Data file' drop down box to view a data table.
       " )),
   bs_accordion(id = "drhs_table_text") %>% 
     bs_set_opts(panel_type = "primary") %>%
-    bs_append(title = "Table functions", 
+    bs_append(title = tags$u("Table functions"), 
               content = p(tags$ul(
                             tags$li(icon("download-alt", lib = "glyphicon"),
-                                    tags$b("Download Data"), " - save the data within the table to your device."),
+                                    tags$b("Download data"), " - save the data within the table to your device."),
                             tags$li(icon("sort", lib = "glyphicon"),
                                     tags$b("Sort"), " - click to sort the table in ascending or 
                                     descending order based on the values in a column."),
-                            tags$li(tags$b("Filter"), " – click the grey boxes below column titles 
+                            tags$li(tags$b("Filter"), " - click the grey boxes below column titles 
                                            to select categories shown in the table (for columns 
                                            with numerical data, use the slider to select the 
                                            range of values to be shown)."),
@@ -1380,13 +1409,6 @@ tabPanel(
       may not be additive and may differ from previous publications."
     )
     ),
-  downloadButton(outputId = "download_glossary6", 
-                 label = "Download glossary", 
-                 class = "glossary"),
-  tags$head(
-    tags$style(".glossary { background-color: #0072B2; } 
-                   .glossary { color: #FFFFFF; }")
-  ),
   
   p(""),
   
@@ -1403,7 +1425,8 @@ tabPanel(
                      label = "Data file",  
                      choices = c("Time trend (Data explorer)", 
                                  "Age/sex (Data explorer)", 
-                                 "Deprivation (Data explorer)", 
+                                 "Deprivation comparison (Data explorer)", 
+                                 "Deprivation profile (Data explorer)", 
                                  "Activity summary (Trend data)",
                                  "Drug summary (Trend data)",
                                  "Demographic summary (Trend data)",
@@ -1441,7 +1464,8 @@ tabPanel(
     )
 
   #End of tabset panel
-    )
+    ), 
+HTML('<div data-iframe-height></div>')
 #End of UI part
   )
     
@@ -1461,17 +1485,43 @@ tabPanel(
 ############## Home Tab ----
 ##############################################.
       
+      
+      observeEvent(
+        input$link_to_home,
+        {
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Introduction")
+        })
+      observeEvent(
+        input$link_to_home2,
+        {
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Introduction")
+        })
+      observeEvent(
+        input$link_to_home3,
+        {
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Introduction")
+        })
+      observeEvent(
+        input$link_to_home4,
+        {
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Introduction")
+        })
+      
       observeEvent(
         input$link_to_geography,
         {
           updateTabsetPanel(session, "Panels", 
-                            selected = "Time trend (location comparison)")
+                            selected = "Location comparison")
         })
       observeEvent(
         input$link_to_substances,
         {
           updateTabsetPanel(session, "Panels", 
-                            selected = "Time trend (drug type comparison)")
+                            selected = "Drug type comparison")
         })
       observeEvent(
         input$link_to_age_sex,
@@ -1489,7 +1539,7 @@ tabPanel(
         input$link_to_table,
         {
           updateTabsetPanel(session, "Panels", 
-                            selected = "Table")
+                            selected = "Data")
         })
       
 
@@ -1505,14 +1555,14 @@ tabPanel(
 
       output$time_trend_clinical_type <- renderUI({
         shinyWidgets::pickerInput(inputId = "Clinical_Type", 
-                                  label = "Clinical type",
+                                  label = "Diagnosis grouping",
                                   choices = clinical_types)
       })
 
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
                                   label = "Drug type",  
-                                  choices = (if(input$Clinical_Type == "Overdose (OD)")
+                                  choices = (if(input$Clinical_Type == "Overdose")
                                     drug_types1
                                     else
                                       drug_types2), 
@@ -1684,7 +1734,7 @@ tabPanel(
             c('#006ddb','#db6d00','#920000',
               '#ffb6db','#490092','#6db6ff',
               '#000000','#004949'
-              ),
+              )[1:length(input$Location)],
        
           symbol = ~ geography_type,
           symbols = c(17,15,16),
@@ -1706,13 +1756,12 @@ tabPanel(
           
           layout(
             #Title
-          title = list (text = (paste0("<b>",input$Hospital_Type,
-                                       " hospital ",
-                                       str_to_lower(str_sub(input$Activity_Type,1,-2)),
+          title = list (text = (paste0("<b>",
+                                       str_sub(input$Activity_Type,1,-2),
                                        " ",
                                        str_to_lower(input$Measure),
-                                       "s for selected locations",
-                                       "<br>", "(",
+                                       "s for selected locations 1996/97 to 2018/19",
+                                       "<br>", "(",input$Hospital_Type,"; ",
                                        word(input$Clinical_Type, start = 1, sep = " \\("), 
                                        "; ",
                                        input$Substances, 
@@ -1727,8 +1776,8 @@ tabPanel(
           annotations = 
             list(x = 0.99, y = -0.27, 
                  text = paste0("Source: Drug-Related","<br>",
-                               "Hospital Statistics,","<br>",
-                               "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                               "Hospital Statistics","<br>",
+                               "(PHS, 2020)"), 
                  showarrow = F, xref='paper', yref='paper', 
                  xanchor='left', yanchor='auto', xshift=0, yshift=0,
                  font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -1744,14 +1793,12 @@ tabPanel(
                    range = c(0, max(geography_new()$value, na.rm = TRUE) +
                                (max(geography_new()$value, na.rm = TRUE)
                                 * 10 / 100)),
+                   fixedrange = TRUE,
                    
                    title = 
                      ifelse(input$Measure == "Rate",
                             paste0(c(
-                              rep("&nbsp;", 20),
-                              "EASR per 100,000 population",
-                              rep("&nbsp;", 20),
-                              rep("\n&nbsp;", 3)
+                              str_wrap("European Age-sex Standardised Rate per 100,000 population",30)
                             ),
                             collapse = ""),
                             paste0(c(
@@ -1773,7 +1820,8 @@ tabPanel(
                  #Wrap the x axis title in blank spaces so that it doesn't...
                  #overlap with the x axis tick labels.
                  
-                 xaxis = list(range = c(-1,22),
+                 xaxis = list(range = c(-1,23),
+                              fixedrange = TRUE,
                               tickangle = -45,
                               title = paste0("<br>",
                                                "<br>",
@@ -1815,7 +1863,7 @@ tabPanel(
         datatable(geography_new(),
                   colnames = c("Financial year",
                                "Hospital type",
-                               "Clinical type",
+                               "Diagnosis grouping",
                                "Activity type",
                                "Location type",
                                "Location",
@@ -1839,7 +1887,7 @@ tabPanel(
                       #Remove row numbers as the CSV file already has row numbers.
                       
                       row.names = FALSE,
-                      col.names = c("Financial year", "Hospital type", "Clinical type",
+                      col.names = c("Financial year", "Hospital type", "Diagnosis grouping",
                                     "Activity type" ,"Location type","Location", 
                                     "Drug type", 
                                     input$Measure), 
@@ -1858,14 +1906,14 @@ tabPanel(
       
       output$time_trend_clinical_type2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Clinical_Type2", 
-                                  label = "Clinical type",
+                                  label = "Diagnosis grouping",
                                   choices = clinical_types)
       })
       
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
                                   label = "Drug type (multiple selection)",  
-                                  choices = (if(input$Clinical_Type2 == "Overdose (OD)")
+                                  choices = (if(input$Clinical_Type2 == "Overdose")
                                   drug_types1
                                   else
                                   drug_types2),
@@ -2041,15 +2089,15 @@ tabPanel(
           colors = 
             #Colors are assigned to each drug type
           c('#000000',  #Any drug type
-            '#004949',  #cannabinoids
+            '#004949',  #Cannabinoids
             '#db6d00',  #Cocaine
+            '#ffb6db',  #Multiple/Other
+            '#920000',  #Other stimulants
+            '#b66dff',  #Sedatives/Hypnotics
+            '#006ddb',  #Opioids
             '#6db6ff',  #Heroin
             '#b6dbff',  #Methadone
-            '#ffb6db',  #Multiple/Other
-            '#006ddb',  #Opioids
-            '#490092',  #Other Opioids
-            '#920000',  #Other stimulants
-            '#b66dff'   #Sedatives/Hypnotics
+            '#490092'   #Other Opioids
           ),
           name = ~ str_wrap(drug_type,10),
           #tooltip
@@ -2069,15 +2117,14 @@ tabPanel(
           layout(
             #Title
             
-            title = list (text = (paste0("<b>",input$Hospital_Type2,
-                                         " hospital ",
-                                         str_to_lower(str_sub(input$Activity_Type2,1,-2)),
+            title = list (text = (paste0("<b>",str_sub(input$Activity_Type2,1,-2),
                                          " ",
                                          str_to_lower(input$Measure2),
-                                         "s for selected drug types",
+                                         "s for selected drug types 1996/97 to 2018/19",
                                          "<br>", "(",
                                          input$Location2, 
                                          "; ",
+                                         input$Hospital_Type2, "; ",
                                          word(input$Clinical_Type2, start = 1, sep = " \\("), 
                                          ")", "<b>")),
                           font = list (size=15)),
@@ -2086,8 +2133,8 @@ tabPanel(
             annotations = 
               list(x = 0.96, y = -0.27, 
                    text = paste0("Source: Drug-Related","<br>",
-                                 "Hospital Statistics,","<br>",
-                                 "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                                 "Hospital Statistics","<br>",
+                                 "(PHS, 2020)"), 
                    showarrow = F, xref='paper', yref='paper', 
                    xanchor='left', yanchor='auto', xshift=0, yshift=0,
                    font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -2101,14 +2148,10 @@ tabPanel(
               
               range = c(0, max(substances_new()$value, na.rm = TRUE) +
                           (max(substances_new()$value, na.rm = TRUE)
-                           * 10 / 100)),
+                           * 10 / 100)),fixedrange = TRUE,
               
               title = ifelse(input$Measure2 == "Rate",
-                             paste0(c(
-                               rep("&nbsp;", 20),
-                               "EASR per 100,000 population",
-                               rep("&nbsp;", 20),
-                               rep("\n&nbsp;", 3)
+                             paste0(c(str_wrap("European Age-sex Standardised Rate per 100,000 population",30)
                              ),
                              collapse = ""),
                              paste0(c(
@@ -2130,7 +2173,8 @@ tabPanel(
             #Wrap the x axis title in blank spaces so that it doesn't...
             #overlap with the x axis tick labels.
             
-            xaxis = list(range = c(-1,22),
+            xaxis = list(range = c(-1,23),
+                         fixedrange = TRUE,
                          tickangle = -45,
                          title = paste0("<br>",
                                         "<br>",
@@ -2170,7 +2214,7 @@ tabPanel(
         datatable(substances_new(),
                   colnames = c("Financial year",
                                "Hospital type",
-                               "Clinical type",
+                               "Diagnosis grouping",
                                "Activity type",
                                "Location type",
                                "Location",
@@ -2192,7 +2236,7 @@ tabPanel(
                         row.names = FALSE,
                         col.names = c("Financial year", 
                                       "Hospital type", 
-                                      "Clinical type", 
+                                      "Diagnosis grouping", 
                                       "Activity type" ,
                                       "Location type",
                                       "Location", 
@@ -2210,7 +2254,7 @@ tabPanel(
         output$age_sex_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Clinical_Type3",
-            label = "Clinical type",
+            label = "Diagnosis grouping",
             choices = clinical_types
           )
         })
@@ -2219,7 +2263,7 @@ tabPanel(
           shinyWidgets::pickerInput(
             inputId = "Substances3",
             label = "Drug type",
-            choices = (if (input$Clinical_Type3 == "Overdose (OD)")
+            choices = (if (input$Clinical_Type3 == "Overdose")
               drug_types1
               else
                 drug_types2),
@@ -2375,13 +2419,12 @@ tabPanel(
             #Make the graph title reactive.
             
             layout(
-                   title = list (text = (paste0("<b>",input$Hospital_Type3,
-                                                " hospital ",
-                                                str_to_lower(str_sub(input$Activity_Type3,1,-2)),
+                   title = list (text = (paste0("<b>",
+                                                str_sub(input$Activity_Type3,1,-2),
                                                 " ",
                                                 str_to_lower(input$Measure3),
-                                                "s for selected age group/sex",
-                                                "<br>", "(Scotland; ",
+                                                "s for selected age group/sex 1996/97 to 2018/19",
+                                                "<br>", "(Scotland; ",input$Hospital_Type3,"; ",
                                                 word(input$Clinical_Type3, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances3,
@@ -2391,8 +2434,8 @@ tabPanel(
                    annotations = 
                      list(x = 0.98, y = -0.27, 
                           text = paste0("Source: Drug-Related","<br>",
-                                        "Hospital Statistics,","<br>",
-                                        "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                                        "Hospital Statistics","<br>",
+                                        "(PHS, 2020)"), 
                           showarrow = F, xref='paper', yref='paper', 
                           xanchor='left', yanchor='auto', xshift=0, yshift=0,
                           font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -2414,14 +2457,10 @@ tabPanel(
                      
                      range = c(0, max(age_sex_time_new()$value, na.rm = TRUE) + 
                                  (max(age_sex_time_new()$value, na.rm = TRUE) 
-                                  * 10 / 100)), 
+                                  * 10 / 100)), fixedrange = TRUE,
                      
                      title = ifelse(input$Measure3 == "Rate",
-                                    paste0(c(
-                                      rep("&nbsp;", 20),
-                                      "EASR per 100,000 population",
-                                      rep("&nbsp;", 20),
-                                      rep("\n&nbsp;", 3)
+                                    paste0(c(str_wrap("European Age-sex Standardised Rate per 100,000 population",30)
                                     ),
                                     collapse = ""),
                                     paste0(c(
@@ -2443,7 +2482,7 @@ tabPanel(
                    #Wrap the x axis title in blank spaces so that it doesn't...
                    #overlap with the x axis tick labels.
                    
-                   xaxis = list(range = c(-1,22),
+                   xaxis = list(range = c(-1,23),fixedrange = TRUE,
                      tickangle = -45, 
                                 title = paste0(
                                                  "<br>",
@@ -2471,10 +2510,10 @@ tabPanel(
             #Remove unnecessary buttons from the modebar.
             
             config(displayModeBar = TRUE,
-                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d', 
-                                                 'zoomOut2d', 'autoScale2d', 
-                                                 'toggleSpikelines', 
-                                                 'hoverCompareCartesian', 
+                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                                 'zoomOut2d', 'autoScale2d',
+                                                 'toggleSpikelines',
+                                                 'hoverCompareCartesian',
                                                  'hoverClosestCartesian'), 
                    displaylogo = F, editable = F)
           }
@@ -2491,7 +2530,7 @@ tabPanel(
             colnames = c(
               "Financial year",
               "Hospital  type",
-              "Clinical type",
+              "Diagnosis grouping",
               "Activity type",
               "Drug type",
               "Age group",
@@ -2517,7 +2556,7 @@ tabPanel(
               col.names = c(
                 "Financial year",
                 "Hospital type",
-                "Clinical type",
+                "Diagnosis grouping",
                 "Activity type",
                 "Drug type",
                 "Age group",
@@ -2678,15 +2717,15 @@ tabPanel(
             height = 500
           ) %>%
             
-            layout(title = list (text = (paste0("<b>",input$Hospital_Type3,
-                                                " hospital ",
-                                                str_to_lower(str_sub(input$Activity_Type3,1,-2)),
+            layout(title = list (text = (paste0("<b>",
+                                                str_sub(input$Activity_Type3,1,-2),
                                                 " ",
                                                 str_to_lower(input$Measure3),
                                                 "s by age group/sex",
                                                 "<br>", "(Scotland; ",
                                                 input$Financial_Year,
                                                 "; ",
+                                                input$Hospital_Type3, "; ",
                                                 word(input$Clinical_Type3, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances3,
@@ -2697,7 +2736,7 @@ tabPanel(
               bargap = 0.2,
               barmode = "overlay",
               
-              yaxis = list(
+              yaxis = list(fixedrange = TRUE,
                 title = paste0(c(
                   rep("&nbsp;", 20),
                   "Age group",
@@ -2720,7 +2759,7 @@ tabPanel(
                   abs(age_sex_year_new_axis()$value)
                 )
                 * 110 / 100)
-                ),
+                ),fixedrange = TRUE,
                 tickangle = 0,
                 tickvals = c(
                   -round(max(abs(
@@ -2780,7 +2819,7 @@ tabPanel(
                 #Make the x axis title reactive.
                 
                 title =  ifelse(input$Measure3 == "Rate",
-                                  "EASR per 100,000 population",
+                                str_wrap("European Age-sex Standardised Rate per 100,000 population",30),
                                   input$Measure3
                 ),
                 
@@ -2791,8 +2830,8 @@ tabPanel(
               annotations = 
                 list(x = 0.99, y = -0.21, 
                      text = paste0("Source: Drug-Related","<br>",
-                                   "Hospital Statistics,","<br>",
-                                   "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                                   "Hospital Statistics","<br>",
+                                   "(PHS, 2020)"), 
                      showarrow = F, xref='paper', yref='paper', 
                      xanchor='left', yanchor='auto', xshift=0, yshift=0,
                      font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -2824,16 +2863,11 @@ tabPanel(
             
             config(
               displayModeBar = TRUE,
-              modeBarButtonsToRemove = list(
-                'select2d',
-                'lasso2d',
-                'zoomIn2d',
-                'zoomOut2d',
-                'autoScale2d',
-                'toggleSpikelines',
-                'hoverCompareCartesian',
-                'hoverClosestCartesian'
-              ),
+              modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                            'zoomOut2d', 'autoScale2d',
+                                            'toggleSpikelines',
+                                            'hoverCompareCartesian',
+                                            'hoverClosestCartesian'),
               displaylogo = F,
               editable = F
             )
@@ -2866,7 +2900,7 @@ tabPanel(
             colnames = c(
               "Financial year",
               "Hospital type",
-              "Clinical type",
+              "Diagnosis grouping",
               "Activity type",
               "Drug type",
               "Age",
@@ -2892,7 +2926,7 @@ tabPanel(
               col.names = c(
                 "Financial year",
                 "Hospital type",
-                "Clinical type",
+                "Diagnosis grouping",
                 "Activity type",
                 "Drug type",
                 "Age",
@@ -2914,7 +2948,7 @@ tabPanel(
         output$SIMD_clinical_type <- renderUI({
           shinyWidgets::pickerInput(
             inputId = "Clinical_Type4",
-            label = "Clinical type",
+            label = "Diagnosis grouping",
             choices = clinical_types
           )
         })
@@ -2923,7 +2957,7 @@ tabPanel(
           shinyWidgets::pickerInput(
             inputId = "Substances4",
             label = "Drug type",
-            choices = (if (input$Clinical_Type4 == "Overdose (OD)")
+            choices = (if (input$Clinical_Type4 == "Overdose")
               drug_types1
               else
                 drug_types2),
@@ -2932,12 +2966,19 @@ tabPanel(
         })
         
         
+        #So here we now need to set up two different charts 
+        #1) For the comparison
+        #2) For the local within comparison. 
+        
+        #1) SIMD Between Comparison  ####
+        
         #Filter it by options for time trend
         SIMD_new <- reactive({
           deprivation %>%
             filter(
               hospital_type %in% input$Hospital_Type4
               & clinical_type %in% input$Clinical_Type4
+              & geography %in% input$Location3
               & activity_type %in% input$Activity_Type4
               & drug_type %in% input$Substances4
               & measure %in% input$Measure4
@@ -2945,7 +2986,8 @@ tabPanel(
               & year %in% input$Financial_Year2
             )%>%
             select(year, hospital_type, clinical_type, activity_type,
-                    drug_type,simd, value)
+                   geography_type,geography,drug_type,simd, value) %>% 
+            droplevels()
         })
         
         
@@ -2994,6 +3036,9 @@ tabPanel(
           tooltip_SIMD <- paste0(
             "Financial year: ",
             SIMD_new()$year,
+            "<br>",    
+            "Location: ",
+            SIMD_new()$geography,
             "<br>",
             "Deprivation index: ",
             SIMD_new()$simd,
@@ -3010,29 +3055,35 @@ tabPanel(
           
           plot_ly(
             data = SIMD_new(),
-            #plot- we wont bother at this point with tailored colour
+            #plot- 
             x = ~  simd,
             y = ~  value,
-            #tooltip
+            color = ~ geography,
+            colors = c('#006ddb','#db6d00','#920000',
+                '#ffb6db','#490092','#6db6ff',
+                '#000000','#004949')[1:length(input$Location3)],
+            type = 'bar',
+            #tooltip,
+            name = ~ str_wrap(geography,10),
             text = tooltip_SIMD,
             hoverinfo = "text",
             #type
-            type = 'bar',
+            
             width = 1000,
             height = 500
           ) %>%
             
             #Make the graph title reactive.
             
-            layout( title = list (text = (paste0("<b>",input$Hospital_Type4,
-                                                " hospital ",
-                                                str_to_lower(str_sub(input$Activity_Type4,1,-2)),
+            layout( title = list (text = (paste0("<b>",
+                                                str_sub(input$Activity_Type4,1,-2),
                                                 " ",
-                                                str_to_lower(input$Measure3),
-                                                "s by deprivation quintile",
-                                                "<br>","(Scotland; ",
+                                                str_to_lower(input$Measure4),
+                                                "s by deprivation quintile and selected locations",
+                                                "<br>","(",
                                                 input$Financial_Year2,
                                                 "; ",
+                                                input$Hospital_Type4, "; ",
                                                 word(input$Clinical_Type4, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances4,
@@ -3044,14 +3095,13 @@ tabPanel(
                    annotations = 
                      list(x = 0.97, y = -0.21, 
                           text = paste0("Source: Drug-Related","<br>",
-                                        "Hospital Statistics,","<br>",
-                                        "ISD Scotland (",format(Sys.Date(), "%Y"),")"), 
+                                        "Hospital Statistics","<br>",
+                                        "(PHS, 2020)"), 
                           showarrow = F, xref='paper', yref='paper', 
                           xanchor='left', yanchor='auto', xshift=0, yshift=0,
                           font=list(family = "arial", size=12, color="#7f7f7f")),  
                    #overlap with the y axis tick labels.
                    #Finally, make the y axis title reactive.
-                   
                    yaxis = list(
                      
                      exponentformat = "none",
@@ -3060,14 +3110,10 @@ tabPanel(
                      
                      range = c(0, max(SIMD_new()$value, na.rm = TRUE) + 
                                  (max(SIMD_new()$value, na.rm = TRUE) 
-                                  * 10 / 100)), 
+                                  * 10 / 100)), fixedrange = TRUE,
                      
                      title = ifelse(input$Measure4 == "Rate",
-                                    paste0(c(
-                                      rep("&nbsp;", 20),
-                                      "EASR per 100,000 population",
-                                      rep("&nbsp;", 20),
-                                      rep("\n&nbsp;", 3)
+                                    paste0(c(str_wrap("European Age-sex Standardised Rate per 100,000 population",30)
                                     ),
                                     collapse = ""),
                                     paste0(c(
@@ -3089,7 +3135,7 @@ tabPanel(
                    #Wrap the x axis title in blank spaces so that it doesn't...
                    #overlap with the x axis tick labels.
                    
-                   xaxis = list( 
+                   xaxis = list( fixedrange = TRUE,
                                 title = paste0("<br>",
                                                "<br>",
                                                "Deprivation quintile"),
@@ -3109,7 +3155,7 @@ tabPanel(
                    
                    ##REMOVE LEGEND FOR NOW- until we have discussed whether 
                    #to have multiple options for any categories
-                   showlegend = FALSE,
+                   showlegend = TRUE,
                    legend = list(
                                  bgcolor = 'rgba(0, 0, 0, 0)', 
                                  bordercolor = 'rgba(255, 255, 255, 0)')) %>%
@@ -3117,10 +3163,10 @@ tabPanel(
             #Remove unnecessary buttons from the modebar.
             
             config(displayModeBar = TRUE,
-                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d', 
-                                                 'zoomOut2d', 'autoScale2d', 
-                                                 'toggleSpikelines', 
-                                                 'hoverCompareCartesian', 
+                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                                 'zoomOut2d', 'autoScale2d',
+                                                 'toggleSpikelines',
+                                                 'hoverCompareCartesian',
                                                  'hoverClosestCartesian'), 
                    displaylogo = F, editable = F)
           }
@@ -3136,14 +3182,16 @@ tabPanel(
             colnames = c(
               "Financial year",
               "Hospital type",
-              "Clinical type",
+              "Diagnosis grouping",
               "Activity type",
+              "Location type",
+              "Location",
               "Drug type",
               "Deprivation index",
               input$Measure4
             )
           ) %>% 
-            formatRound(columns = 7, 
+            formatRound(columns = 9, 
                         digits = ifelse(input$Measure4 =="Number",0,2))
         })
         
@@ -3161,8 +3209,10 @@ tabPanel(
               col.names = c(
                 "Financial year",
                 "Hospital type",
-                "Clinical type",
+                "Diagnosis grouping",
                 "Activity type",
+                "Location type",
+                "Location",
                 "Drug type",
                 "Deprivation index",
                 input$Measure4
@@ -3172,6 +3222,255 @@ tabPanel(
           }
         )
       
+
+        #2) SIMD Within Comparison ####
+        
+        #Filter it by options for time trend
+        SIMD_local_new <- reactive({
+          deprivation_local %>%
+            filter(
+              hospital_type %in% input$Hospital_Type4
+              & clinical_type %in% input$Clinical_Type4
+              & activity_type %in% input$Activity_Type4
+              & geography %in% input$Location4
+              & drug_type %in% input$Substances4
+              & measure %in% input$Measure4
+              #and the year options
+              & year %in% input$Financial_Year2
+            )%>%
+            select(year, hospital_type, clinical_type, activity_type,
+                   geography_type,geography,drug_type,simd, value)
+        })
+        
+        
+        
+        #Create the main body of the chart.
+        output$SIMD_local_plot <- renderPlotly({
+          
+          
+          if (input$Financial_Year2 %in% financial_years[1:10]
+              & input$Activity_Type4 == "New patients")
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Data are not available for new patients before 
+              2006/07", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, editable = F) 
+            
+          }
+          
+          else {
+            
+            #Add in a tooltip
+            tooltip_SIMD_local <- paste0(
+              "Financial year: ",
+              SIMD_local_new()$year,
+              "<br>",  
+              "Location: ",
+              SIMD_local_new()$geography,
+              "<br>",
+              "Deprivation index: ",
+              SIMD_local_new()$simd,
+              "<br>",
+              "Substance: ",
+              SIMD_local_new()$drug_type,
+              "<br>",
+              input$Measure4,
+              ": ",
+              formatC(SIMD_local_new()$value, big.mark = ",", 
+                      digits = ifelse(input$Measure4 =="Number",0,2), 
+                      format = 'f')
+            )
+            
+            plot_ly(
+              data = SIMD_local_new(),
+              #plot- we wont bother at this point with tailored colour
+              x = ~  simd,
+              y = ~  value,
+              #tooltip
+              text = tooltip_SIMD_local,
+              hoverinfo = "text",
+              #type
+              type = 'bar',
+              width = 1000,
+              height = 500
+            ) %>%
+              
+              #Make the graph title reactive.
+              
+              layout( title = list (text = (paste0("<b>",
+                                                   str_sub(input$Activity_Type4,1,-2),
+                                                   " ",
+                                                   str_to_lower(input$Measure4),
+                                                   "s by deprivation quintile",
+                                                   "<br>","(",
+                                                   input$Location4, 
+                                                   "; ",
+                                                   input$Financial_Year2,
+                                                   "; ",
+                                                   input$Hospital_Type4,"; ",
+                                                   word(input$Clinical_Type4, start = 1, sep = " \\("), 
+                                                   "; ",
+                                                   input$Substances4,
+                                                   ")", "<b>")),
+                                    font = list (size=15)),
+                      
+                      
+                      separators = ".,",
+                      annotations = 
+                        list(x = 0.97, y = -0.21, 
+                             text = paste0("Source: Drug-Related","<br>",
+                                           "Hospital Statistics","<br>",
+                                           "(PHS, 2020)"), 
+                             showarrow = F, xref='paper', yref='paper', 
+                             xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                             font=list(family = "arial", size=12, color="#7f7f7f")),  
+                      #overlap with the y axis tick labels.
+                      #Finally, make the y axis title reactive.
+                      
+                      yaxis = list(
+                        
+                        exponentformat = "none",
+                        
+                        separatethousands = TRUE,
+                        
+                        range = c(0, max(SIMD_local_new()$value, na.rm = TRUE) + 
+                                    (max(SIMD_local_new()$value, na.rm = TRUE) 
+                                     * 10 / 100)), fixedrange = TRUE,
+                        
+                        title = ifelse(input$Measure4 == "Rate",
+                                       paste0(c(str_wrap("European Age-sex Standardised Rate per 100,000 population",30)
+                                       ),
+                                       collapse = ""),
+                                       paste0(c(
+                                         rep("&nbsp;", 20),
+                                         input$Measure4,
+                                         rep("&nbsp;", 20),
+                                         rep("\n&nbsp;", 3)
+                                       ),
+                                       collapse = "")
+                        ),
+                        showline = TRUE, 
+                        ticks = "outside"
+                        
+                      ),
+                      
+                      #Set the tick angle to minus 45. It's the only way for the x...
+                      #axis tick labels (fin. years) to display without overlapping...
+                      #with each other.
+                      #Wrap the x axis title in blank spaces so that it doesn't...
+                      #overlap with the x axis tick labels.
+                      
+                      xaxis = list( fixedrange = TRUE,
+                        title = paste0("<br>",
+                                       "<br>",
+                                       "Deprivation quintile"),
+                        showline = TRUE, 
+                        ticks = "outside"),
+                      
+                      #Fix the margins so that the graph and axis titles have enough...
+                      #room to display nicely.
+                      #Set the font sizes.
+                      
+                      margin = list(l = 90, r = 100, b = 70, t = 90),
+                      font = list(size = 13),
+                      
+                      #Insert a legend so that the user knows which colour...
+                      #corresponds to which location of treatment.
+                      #Make the legend background and legend border white.              
+                      
+                      ##REMOVE LEGEND FOR NOW- until we have discussed whether 
+                      #to have multiple options for any categories
+                      showlegend = FALSE,
+                      legend = list(
+                        bgcolor = 'rgba(0, 0, 0, 0)', 
+                        bordercolor = 'rgba(255, 255, 255, 0)')) %>%
+              
+              #Remove unnecessary buttons from the modebar.
+              
+              config(displayModeBar = TRUE,
+                     modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                                   'zoomOut2d', 'autoScale2d',
+                                                   'toggleSpikelines',
+                                                   'hoverCompareCartesian',
+                                                   'hoverClosestCartesian'), 
+                     displaylogo = F, editable = F)
+          }
+        })
+        
+        
+        #Table
+        output$SIMD_local_table <- renderDataTable({
+          datatable(
+            SIMD_local_new(),
+            style = 'bootstrap',
+            rownames = FALSE,
+            colnames = c(
+              "Financial year",
+              "Hospital type",
+              "Diagnosis grouping",
+              "Activity type",
+              "Location type",
+              "Location",
+              "Drug type",
+              "Deprivation index",
+              input$Measure4
+            )
+          ) %>% 
+            formatRound(columns = 9, 
+                        digits = ifelse(input$Measure4 =="Number",0,2))
+        })
+        
+        #Download button
+        
+        output$download_SIMD_local <- downloadHandler(
+          filename = 'deprivation.csv',
+          content = function(file) {
+            write.table(
+              SIMD_local_new(),
+              file,
+              #Remove row numbers as the CSV file already has row numbers.
+              
+              row.names = FALSE,
+              col.names = c(
+                "Financial year",
+                "Hospital type",
+                "Diagnosis grouping",
+                "Activity type",
+                "Location type",
+                "Location",
+                "Drug type",
+                "Deprivation index",
+                input$Measure4
+              ),
+              sep = ","
+            )
+          }
+        )
+        
 ##############################################.
 ############## Table tab ----
 ##############################################.
@@ -3188,7 +3487,7 @@ tabPanel(
                  "Time trend (Data explorer)" = time_trend %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Clinical type" = clinical_type,
+                          "Diagnosis grouping" = clinical_type,
                           "Activity type" = activity_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
@@ -3198,18 +3497,31 @@ tabPanel(
                  "Age/sex (Data explorer)" = age_sex %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Clinical type" = clinical_type,
+                          "Diagnosis grouping" = clinical_type,
                           "Activity type" = activity_type,
                           "Drug type" = drug_type,
                           "Age group" = age_group,
                           "Sex" = sex,
                           "Measure" = measure,
                           "Value" = value),
-                 "Deprivation (Data explorer)" = deprivation %>%
+                 "Deprivation comparison (Data explorer)" = deprivation %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Clinical type" = clinical_type,
+                          "Diagnosis grouping" = clinical_type,
                           "Activity type" = activity_type,
+                          "Location type" = geography_type, 
+                          "Location" = geography, 
+                          "Drug type" = drug_type,
+                          "Deprivation" = simd,
+                          "Measure" = measure,
+                          "Value" = value),
+                 "Deprivation profile (Data explorer)" = deprivation_local %>%
+                   rename("Financial year" = year, 
+                          "Hospital type" = hospital_type,
+                          "Diagnosis grouping" = clinical_type,
+                          "Activity type" = activity_type,
+                          "Location type" = geography_type, 
+                          "Location" = geography, 
                           "Drug type" = drug_type,
                           "Deprivation" = simd,
                           "Measure" = measure,
@@ -3217,7 +3529,7 @@ tabPanel(
                  "Activity summary (Trend data)" = activity_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
-                        "Clinical type" = clinical_type,
+                        "Diagnosis grouping" = clinical_type,
                         "Activity type" = activity_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
@@ -3225,7 +3537,7 @@ tabPanel(
                  "Drug summary (Trend data)" = drug_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
-                        "Clinical type" = clinical_type,
+                        "Diagnosis grouping" = clinical_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Drug type" = drug_type,
@@ -3233,7 +3545,7 @@ tabPanel(
                  "Demographic summary (Trend data)" = demographic_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
-                        "Clinical type" = clinical_type,
+                        "Diagnosis grouping" = clinical_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Age group" = age_group,
@@ -3243,7 +3555,7 @@ tabPanel(
                  "Length of stay" = length_of_stay %>% 
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Clinical type" = clinical_type,
+                          "Diagnosis grouping" = clinical_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
                           "Drug type" = drug_type,
@@ -3252,13 +3564,13 @@ tabPanel(
                           "Deprivation index" = simd,
                           "Number of stays" = total, 
                           "<1 week (%)" = perc_less_1week,
-                          ">1 week (%)" = perc_more_1week,
-                          "Median length of stay" = med_los
+                          ">=1 week (%)" = perc_more_1week,
+                          "Median length of stay (days)" = med_los
                    ),
                  "Emergency admissions" = emergency_admissions %>% 
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Clinical type" = clinical_type,
+                          "Diagnosis grouping" = clinical_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
                           "Drug type" = drug_type,
@@ -3274,7 +3586,7 @@ tabPanel(
                  "Drug type by hospital" = drug_type_by_hospital %>% 
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Clinical type" = clinical_type,
+                          "Diagnosis grouping" = clinical_type,
                           "Activity type" = activity_type, 
                           "Drug type" = drug_type,
                           "SMR01 (%)" = perc_source01,
@@ -3324,50 +3636,6 @@ tabPanel(
           } 
         )
         
-        
-        #glossary link for each page - six in total
-        
-        output$download_glossary1 <- downloadHandler(
-          filename = 'glossary.pdf',
-          content = function(file) {
-            file.copy("www/glossary.pdf", file)
-          }
-        )
-        
-        output$download_glossary2 <- downloadHandler(
-          filename = 'glossary.pdf',
-          content = function(file) {
-            file.copy("www/glossary.pdf", file)
-          }
-        )
-        
-        output$download_glossary3 <- downloadHandler(
-          filename = 'glossary.pdf',
-          content = function(file) {
-            file.copy("www/glossary.pdf", file)
-          }
-        )
-        
-        output$download_glossary4 <- downloadHandler(
-          filename = 'glossary.pdf',
-          content = function(file) {
-            file.copy("www/glossary.pdf", file)
-          }
-        )
-        
-        output$download_glossary5 <- downloadHandler(
-          filename = 'glossary.pdf',
-          content = function(file) {
-            file.copy("www/glossary.pdf", file)
-          }
-        )
-        
-        output$download_glossary6 <- downloadHandler(
-          filename = 'glossary.pdf',
-          content = function(file) {
-            file.copy("www/glossary.pdf", file)
-          }
-        )
       
       #End of server
     }
