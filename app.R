@@ -26,6 +26,7 @@ library(DT)
 library(forcats)
 library(shinyBS)
 library(bsplus)
+library(shinymanager)
 
 
 ##############################################.
@@ -35,87 +36,28 @@ library(bsplus)
 
 #Data to be used for explorer and trend pages
 #Following is rounded data
-all_data<- readRDS("s06-temp10_num_rate_perc_R-SHINY_rounded.RDS")
-#need to rename the final column as value
-all_data<-all_data %>% 
-  rename("value" = value_Round)
 
-#Round to two decimal places. 
-all_data<-all_data%>% 
-  mutate(value = round(value, 2))
-
-#We will manually change the names of factors in R until we have an agreed 
-#terminology for the hospital type and clinical type, as well age and sex. 
-
-all_data<-all_data %>% 
-  mutate(hospital_type= fct_recode(hospital_type, 
-                                   "General acute"= "General acute (SMR01)",
-                                   "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
-         clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural" = "Mental and Behavioural",
-                                   "Overdose" = "Overdose",
-                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
-         drug_type = fct_recode(drug_type, "Any drug type" = "All"),
-         age_group = fct_recode(age_group, "All age groups" = "All"),
-         sex = fct_recode(sex, "Both sexes" = "All"))
-
+time_trend<- readRDS('time_trend.rds')
+age_sex <- readRDS('age_sex.rds')
+deprivation  <- readRDS('deprivation.rds')
+deprivation_local <- readRDS('deprivation_local.rds')
 
 #Data that is not visualized  
-length_of_stay <- readRDS("s07-temp08_lsty_R-SHINY_rounded.RDS")
-length_of_stay<-length_of_stay %>% 
-  rename("perc_less_1week" = perc_less_1week_round, 
-         "perc_more_1week" = perc_more_1week_round,
-         "total" = total_rounded)
+length_of_stay <- readRDS("r07-temp02_lsty_R_SHINY_rounded.rds")
+emergency_admissions<- readRDS("r08-temp02_emerAdm_R_SHINY_rounded.rds")
+drug_type_by_hospital<-readRDS ("r09-temp02_dist_hospit_R_SHINY_rounded.rds")
 
-emergency_admissions<- readRDS("s08-temp08_emerAdm_R-SHINY_rounded.RDS")
-emergency_admissions <-emergency_admissions %>% 
-  rename("perc_adm_emer" = perc_adm_emer_round, 
-         "perc_adm_other" = perc_adm_other_round,
-         "total" = total_rounded) 
-
-drug_type_by_hospital<-readRDS ("s09-temp05_dist_hospit_R-SHINY_rounded.RDS")
-drug_type_by_hospital<-drug_type_by_hospital %>% 
-  rename("total" = total_rounded) 
-
-#filter data set for data for each tab
-
-time_trend <- all_data %>% 
-  filter(age_group == "All age groups",
-         sex == "Both sexes", 
-         simd == "All") %>% 
-  mutate(drug_type = fct_relevel(drug_type, "Any drug type","Cannabinoids","Cocaine","Multiple/Other","Other Stimulants","Sedatives/Hypnotics",
-                                 "Opioids", "Heroin","Methadone","Other opioids" ))%>% 
-  select(-c(age_group,sex,simd,output))
-
-age_sex <- all_data %>% 
-  filter(geography =="Scotland", 
-         simd== "All"
-         ) %>% 
-  select(-c(simd, geography_type,geography,output)) 
-
-deprivation <- all_data %>% 
-  filter(simd != "All",
-         output == 1.04) %>% 
-  select(-c(age_group,sex,output)) %>% 
-  droplevels()
-
-deprivation_local <- all_data %>% 
-  filter(simd != "All",
-         output == 1.06) %>% 
-  select(-c(age_group,sex,output)) %>% 
-  droplevels()
 
 #We then create the options for users to choose from in the drop down menus. 
 #Drug Types are created as list to allow different options dependent on the 
 #Hospital admission types
-hospital_types <- as.character(unique(all_data$hospital_type))
+hospital_types <- as.character(unique(time_trend$hospital_type))
 hospital_types<-c(hospital_types[3],hospital_types[1],hospital_types[2])
-clinical_types <- as.character(unique(all_data$clinical_type))
-clinical_types<-c(clinical_types[3],clinical_types[1],clinical_types[2])
-activity_type <- as.character(unique(all_data$activity_type))
-location_types <- as.character(unique(all_data$geography_type))
-locations<- as.character(unique(all_data$geography))
+diagnosis_types <- as.character(unique(time_trend$diagnosis_type))
+diagnosis_types<-c(diagnosis_types[3],diagnosis_types[1],diagnosis_types[2])
+activity_type <- as.character(unique(time_trend$activity_type))
+location_types <- as.character(unique(time_trend$geography_type))
+locations<- as.character(unique(time_trend$geography))
 
 geography_list<-list("Scotland" = locations[1:3],
                      "NHS Board of residence" = locations[4:17],
@@ -125,131 +67,29 @@ geography_deprivation_list<-list("Scotland" = locations[1],
                      "NHS Board of residence" = locations[4:17],
                      "ADP of residence" = locations[18:48])
 
-drug_types<- as.character(unique(all_data$drug_type))
-drug_types1<- list("Main Categories" = as.character(unique(all_data$drug_type)[1:7]),
-                  "Opioids Sub Categories" = as.character(unique(all_data$drug_type)[8:10]))
-drug_types2<- as.character(unique(all_data$drug_type)[1:7])
-measures<- as.character(unique(all_data$measure))
+drug_types<- as.character(unique(time_trend$drug_type))
+drug_types1<- list("Main Categories" = as.character(unique(time_trend$drug_type)[1:8]),
+                  "Opioids Sub Categories" = as.character(unique(time_trend$drug_type)[9:11]))
+drug_types2<- as.character(unique(time_trend$drug_type)[1:8])
+measures<- as.character(unique(time_trend$measure))
 
 
 #Add in age, sex, SIMD and financial years options for demographic tabs
-age <- as.character(unique(all_data$age_group))
-sex <- as.character(unique(all_data$sex))
-financial_years <- as.character(unique(all_data$year))
-SIMD<- as.character(unique(all_data$simd))
+age <- as.character(unique(age_sex$age_group))
+sex <- as.character(unique(age_sex$sex))
+financial_years <- as.character(unique(time_trend$year))
+SIMD<- as.character(unique(deprivation$simd))
 
-
-#we need to look at altering the data for the tornado chart so that male values
-#negative to allow it to work 
-#Convert males to negative (and remove all)
-age_sex_male <- age_sex %>%
-  filter(sex == "Male"
-         & age_group != "All age groups") %>%
-  mutate(value = value * -1)
-#Then remove females
-age_sex_female <- age_sex %>%
-  filter(sex == "Female"
-         & age_group != "All age groups")
-
-#recombine them into one chart
-age_sex_tornado <- rbind(age_sex_male, age_sex_female)
+# Read in chart for age/sex tornado chart
+age_sex_tornado <- readRDS('age_sex_tornado.rds')
 
 #we can now set up the data for that from the data trend page
 
-activity_summary<-all_data %>% 
-  filter(drug_type == "Any drug type", 
-        age_group == "All age groups",
-        sex == "Both sexes",
-        simd == "All", 
-        measure == "Rate")
-
-drug_summary<- all_data %>% 
-  filter(activity_type == "Stays",
-         drug_type %in% drug_types2,
-         drug_type != "Any drug type",
-         age_group == "All age groups",
-         sex == "Both sexes",
-         simd == "All", 
-         measure == "Rate")
+activity_summary<- readRDS('activity_summary.rds')
+drug_summary<- readRDS('drug_summary.rds')
+demographic_summary<- readRDS ('demographic_summary.rds')
 
 
-demographic_summary<- all_data  %>% 
-  filter(drug_type == "Any drug type",
-         activity_type =="Patients",
-         ((age_group != "All age groups" & sex == "Both sexes" & simd =="All")|
-            (age_group == "All age groups" & sex != "Both sexes" & simd =="All")|
-            (age_group == "All age groups" & sex == "Both sexes" & simd !="All")), 
-         measure == "Rate") 
-
-
-#Keep only those columns that are necessary
-activity_summary<-activity_summary %>% 
-  select(year,hospital_type,clinical_type,activity_type,
-         geography_type,geography,value)
-
-drug_summary<-drug_summary %>% 
-  select(year,hospital_type,clinical_type,drug_type,
-         geography_type,geography,value)
-
-demographic_summary<-demographic_summary %>% 
-  select(year,hospital_type,clinical_type,
-         geography_type,geography,
-         age_group,sex,simd,
-         value)
-
-#We can then drop unnecessary columns from these tables
-
-length_of_stay <- length_of_stay %>% 
-  select(-activity_type)%>% 
-  mutate(perc_less_1week = round(perc_less_1week, 2), 
-         perc_more_1week = round(perc_more_1week, 2),
-         hospital_type= fct_recode(hospital_type, 
-                                   "General acute"= "General acute (SMR01)",
-                                   "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
-         clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural" = "Mental and Behavioural",
-                                   "Overdose" = "Overdose",
-                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
-         drug_type = fct_recode (drug_type, 
-                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
-                                 "Any drug type" = "All"),
-         age_group = fct_recode(age_group, "All age groups" = "All"),
-         sex = fct_recode(sex, "Both sexes" = "All"))
-
-emergency_admissions <- emergency_admissions %>% 
-  select(-activity_type)%>% 
-  mutate(perc_adm_emer = round(perc_adm_emer, 2), 
-         perc_adm_other = round(perc_adm_other, 2),
-         hospital_type= fct_recode(hospital_type, 
-                                   "General acute"= "General acute (SMR01)",
-                                   "Psychiatric" ="Psychiatric (SMR04)",
-                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
-         clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural" = "Mental and Behavioural",
-                                   "Overdose" = "Overdose",
-                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
-                 drug_type = fct_recode (drug_type, 
-                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
-                                 "Any drug type" = "All"),
-         age_group = fct_recode(age_group, "All age groups" = "All"),
-         sex = fct_recode(sex, "Both sexes" = "All"))
-
-drug_type_by_hospital <- drug_type_by_hospital %>% 
-  select(-c(geography_type,geography,
-             age_group,sex,simd))%>% 
-  mutate(perc_source01 = round(perc_source01, 2), 
-         perc_source04 = round(perc_source04, 2), 
-         perc_sourceBOTH = round(perc_sourceBOTH, 2),
-         hospital_type= fct_recode(hospital_type, 
-                                   "Any hospital type" = "Combined (General acute/Psychiatric)"),
-         clinical_type= fct_recode(clinical_type, 
-                                   "Mental & behavioural" = "Mental and Behavioural",
-                                   "Overdose" = "Overdose",
-                                   "Any diagnosis" = "Combined (Mental and Behavioural/Overdose)"),
-         drug_type = fct_recode (drug_type, 
-                                 "Sedatives/ Hypnotics" = "Sedatives/Hypnotics",
-                                 "Any drug type" = "All"))
 
 
 ##############################################.
@@ -257,7 +97,8 @@ drug_type_by_hospital <- drug_type_by_hospital %>%
 ##############################################.
   {
     #Beginning of UI
-    ui <- fluidPage(
+    ui <- #secure_app( #uncomment if needing password protection
+      fluidPage(
       style = "width: 100%; height: 100%; max-width: 1200px;",
       tags$head(
         tags$style(
@@ -363,7 +204,7 @@ tabsetPanel(
       p("A less detailed overview of drug-related hospital stays in Scotland 
         over time is available in the",
         tags$a(
-          href = "https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/trend-data/", 
+          href = "https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/15-june-2021/trend-data/", 
           "Trend data"
         ),
         " page"),
@@ -380,7 +221,7 @@ tabsetPanel(
                         activity."
                       ),
                       tags$li(
-                        "Information is generally available for financial years 1996/97 to 2018/19.
+                        "Information is generally available for financial years 1996/97 to 2019/20.
                         Where shown, Alcohol and Drug Partnership (ADP) information is available from 1997/98 and new patient trends 
                         are available from 2006/07."
                       ),
@@ -389,7 +230,7 @@ tabsetPanel(
                         data are provisional and subject to change. For more information, visit 
                         the ", 
           tags$a(
-            href = "http://www.isdscotland.org/products-and-Services/Data-Support-and-Monitoring/SMR-Completeness/", 
+            href = "https://www.opendata.nhs.scot/dataset/scottish-morbidity-record-completeness", 
             "SMR completeness"
           ),
           " webpage."
@@ -400,7 +241,7 @@ tabsetPanel(
           Classification of Diseases and Related Health Problems, 10th Edition
           (ICD-10). ICD-10 codes used to classify drug-related hospital stays 
           are listed in Appendix 1 (see Analytical definitions) in the ",
-          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/methods/">methods section</a>.')),
+          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/15-june-2021/methods/">methods section</a>.')),
           "Note that patients may have more than one
           drug-related diagnosis per stay." 
           
@@ -414,9 +255,9 @@ tabsetPanel(
         ), 
         tags$li(
           "Further technical details can be seen on the ",
-          tags$a(href = "https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/","Data overview"),
+          tags$a(href = "https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/15-june-2021/","Data overview"),
           " webpage. Technical terms are explained in the ", 
-          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/glossary/">Glossary</a>.'))
+          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/15-june-2021/glossary/">Glossary</a>.'))
         )
         
       )
@@ -527,9 +368,9 @@ tabsetPanel(
       
       #Insert the reactive filters.
       #We have SIX filters at this point 
-      # 1 - Hospital/Clinical type
-      # 2 - Activity Type
-      # 3 - Geography Type
+      # 1 - Hospital type
+      # 2 - Diagnosis Type
+      # 3 - Actvity Type
       # 4 - Geography (Multiple)
       # 5 - Substance
       # 6 - Measure
@@ -558,7 +399,7 @@ tabsetPanel(
       
       column(
         4,
-        uiOutput("time_trend_clinical_type"), 
+        uiOutput("time_trend_diagnosis_type"), 
         uiOutput("time_trend_substance1")
         ),
         
@@ -700,9 +541,9 @@ tabsetPanel(
       
       #Insert the reactive filters.
       #We have SIX filters at this point 
-      # 1 - Hospital/Clinical type
-      # 2 - Activity Type
-      # 3 - Geography Type
+      # 1 - Hospital type
+      # 2 - Diagnosis Type
+      # 3 - Activity Type
       # 4 - Geography 
       # 5 - Substance (Multiple)
       # 6 - Measure
@@ -727,7 +568,7 @@ tabsetPanel(
       
       column(
         4,
-        uiOutput("time_trend_clinical_type2"), 
+        uiOutput("time_trend_diagnosis_type2"), 
         uiOutput("time_trend_substance2")
       ),
       
@@ -889,9 +730,10 @@ p(
     
     #Insert the reactive filters.
     #We have FOUR filters at this point
-    # 1 - Hospital/Clinical type
+    # 1 - Hospital type
+    # 2 - Diagnosis type
     # 2 - Activity Type
-    # 3 - Substance (dependent on Hospital/Clinic Type)
+    # 3 - Substance (dependent on Hospital/Diagnosis Type)
     # 4 - Measure
     
     column(4,
@@ -904,7 +746,7 @@ p(
     
     column(
       4,
-      uiOutput("age_sex_clinical_type"),
+      uiOutput("age_sex_diagnosis_type"),
       shinyWidgets::pickerInput(
         inputId = "Measure3",
         label = "Measure",
@@ -1012,12 +854,12 @@ p(
       br(),
       column(
         8,
-        chooseSliderSkin("HTML5"),
+        chooseSliderSkin("Big"),
         shinyWidgets::sliderTextInput(
           inputId = "Financial_Year",
           label = "Financial year",
           choices = financial_years,
-          selected = "2018/19",
+          selected = "2019/20",
           grid = T,
           animate = animationOptions(playButton = icon('play', 
                                                       "fa fa-play-circle fa-3x"),
@@ -1113,7 +955,7 @@ tabPanel(
                               HTML(paste0(tags$b("locations)"),"."))
                             )),
                           p("For more information on deprivation analysis, and the difference between these two analyses please see the ",
-                          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/27-october-2020/methods/">methods section</a>.'))),
+                          HTML(paste0('<a href="https://beta.isdscotland.org/find-publications-and-data/lifestyle-and-behaviours/substance-use/drug-related-hospital-statistics/15-june-2021/methods/">methods section</a>.'))),
                           
                           p("The charts can be modified using the drop down boxes:"), 
                            tags$ul(
@@ -1184,9 +1026,10 @@ tabPanel(
     
     #Insert the reactive filters.
     #We have Five filters at this point
-    # 1 - Hospital/Clinical type
-    # 2 - Activity Type
-    # 3 - Substance (dependent on Hospital/Clinic Type)
+    # 1 - Hospital type
+    # 2 - Diagnosis Type
+    # 3 - Activity Type
+    # 3 - Substance (dependent on Hospital/Diagnosis Type)
     # 4 - Financial Year
     # 5 - Measure
     
@@ -1202,14 +1045,14 @@ tabPanel(
     column(
       4,
       
-      uiOutput("SIMD_clinical_type"), 
+      uiOutput("SIMD_diagnosis_type"), 
       
       shinyWidgets::pickerInput(
-        inputId = "Financial_Year2",
-        label = "Financial year",
-        choices =  rev(financial_years),
-        selected = "2018/19")
-      
+        inputId = "Measure4",
+        label = "Measure",
+        choices = measures,
+        selected = "Rate"
+      )
 
     ),
     
@@ -1219,14 +1062,24 @@ tabPanel(
              label = "Activity type",
              choices = activity_type,
              selected = "Stays"
-           ), 
-           shinyWidgets::pickerInput(
-             inputId = "Measure4",
-             label = "Measure",
-             choices = measures,
-             selected = "Rate"
            )
-    )  
+    ),
+    column(
+      8,
+      chooseSliderSkin("Big"),
+      shinyWidgets::sliderTextInput(
+        inputId = "Financial_Year2",
+        label = "Financial year",
+        choices = financial_years,
+        selected = "2019/20",
+        grid = T,
+        animate = animationOptions(playButton = icon('play', 
+                                                     "fa fa-play-circle fa-3x"),
+                                   pauseButton = icon('pause', 
+                                                      "fa fa-pause-circle fa-3x")),
+        width = "1090px"
+      )
+    )
   ),
   
   
@@ -1466,16 +1319,26 @@ tabPanel(
   #End of tabset panel
     ), 
 HTML('<div data-iframe-height></div>')
+      
 #End of UI part
   )
-    
+#)#secure app  
     
 ##############################################.      
 ############## Server ----
 ##############################################.  
-    
+    credentials <- readRDS("admin/credentials.rds")
     server  <-  function(input, output, session)
     {
+      
+      res_auth <- secure_server(
+        check_credentials = check_credentials(credentials)
+      )
+      
+      output$auth_output <- renderPrint({
+        reactiveValuesToList(res_auth)
+      })
+      
       #These observeEvent() commands will be combined with action buttons in...
       #the User Interface to allow the user to navigate to each tab by clicking...
       #on links in the Introduction page (in addition to the classic way of...
@@ -1553,16 +1416,16 @@ HTML('<div data-iframe-height></div>')
       #type' input. 
       
 
-      output$time_trend_clinical_type <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Clinical_Type", 
+      output$time_trend_diagnosis_type <- renderUI({
+        shinyWidgets::pickerInput(inputId = "Diagnosis_Type", 
                                   label = "Diagnosis grouping",
-                                  choices = clinical_types)
+                                  choices = diagnosis_types)
       })
 
       output$time_trend_substance1 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances",
                                   label = "Drug type",  
-                                  choices = (if(input$Clinical_Type == "Overdose")
+                                  choices = (if(input$Diagnosis_Type == "Overdose")
                                     drug_types1
                                     else
                                       drug_types2), 
@@ -1578,13 +1441,13 @@ HTML('<div data-iframe-height></div>')
         time_trend %>%
           filter(
             hospital_type %in% input$Hospital_Type
-            & clinical_type %in% input$Clinical_Type
+            & diagnosis_type %in% input$Diagnosis_Type
             & activity_type %in% input$Activity_Type
             & geography %in% input$Location
             & drug_type %in% input$Substances
             & measure %in% input$Measure 
           )%>%
-          select(year, hospital_type, clinical_type, activity_type,
+          select(year, hospital_type, diagnosis_type, activity_type,
                  geography_type, geography, drug_type,value) %>% 
           droplevels(except= c(1,5))
       })
@@ -1731,9 +1594,9 @@ HTML('<div data-iframe-height></div>')
           colors = 
             #We use 8 colours that are considered to be 
             #blind friendly
-            c('#006ddb','#db6d00','#920000',
-              '#ffb6db','#490092','#6db6ff',
-              '#000000','#004949'
+            c('#3F3685','#9B4393','#0078D4',
+              '#83BB26','#948DA3','#1E7F84',
+              '#6B5C85','#C73918'
               )[1:length(input$Location)],
        
           symbol = ~ geography_type,
@@ -1760,9 +1623,9 @@ HTML('<div data-iframe-height></div>')
                                        str_sub(input$Activity_Type,1,-2),
                                        " ",
                                        str_to_lower(input$Measure),
-                                       "s for selected locations 1996/97 to 2018/19",
+                                       "s for selected locations 1996/97 to 2019/20",
                                        "<br>", "(",input$Hospital_Type,"; ",
-                                       word(input$Clinical_Type, start = 1, sep = " \\("), 
+                                       word(input$Diagnosis_Type, start = 1, sep = " \\("), 
                                        "; ",
                                        input$Substances, 
                                        ")", "<b>")),
@@ -1777,7 +1640,7 @@ HTML('<div data-iframe-height></div>')
             list(x = 0.99, y = -0.27, 
                  text = paste0("Source: Drug-Related","<br>",
                                "Hospital Statistics","<br>",
-                               "(PHS, 2020)"), 
+                               "(PHS, 2021)"), 
                  showarrow = F, xref='paper', yref='paper', 
                  xanchor='left', yanchor='auto', xshift=0, yshift=0,
                  font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -1820,7 +1683,7 @@ HTML('<div data-iframe-height></div>')
                  #Wrap the x axis title in blank spaces so that it doesn't...
                  #overlap with the x axis tick labels.
                  
-                 xaxis = list(range = c(-1,23),
+                 xaxis = list(range = c(-1,24),
                               fixedrange = TRUE,
                               tickangle = -45,
                               title = paste0("<br>",
@@ -1904,16 +1767,16 @@ HTML('<div data-iframe-height></div>')
       #This is because the 'location' input is dependent on the 'location
       #type' input. 
       
-      output$time_trend_clinical_type2 <- renderUI({
-        shinyWidgets::pickerInput(inputId = "Clinical_Type2", 
+      output$time_trend_diagnosis_type2 <- renderUI({
+        shinyWidgets::pickerInput(inputId = "Diagnosis_Type2", 
                                   label = "Diagnosis grouping",
-                                  choices = clinical_types)
+                                  choices = diagnosis_types)
       })
       
       output$time_trend_substance2 <- renderUI({
         shinyWidgets::pickerInput(inputId = "Substances2",
                                   label = "Drug type (multiple selection)",  
-                                  choices = (if(input$Clinical_Type2 == "Overdose")
+                                  choices = (if(input$Diagnosis_Type2 == "Overdose")
                                   drug_types1
                                   else
                                   drug_types2),
@@ -1931,13 +1794,13 @@ HTML('<div data-iframe-height></div>')
         time_trend %>%
           filter(
             hospital_type %in% input$Hospital_Type2
-            & clinical_type %in% input$Clinical_Type2
+            & diagnosis_type %in% input$Diagnosis_Type2
             & activity_type %in% input$Activity_Type2
             & geography %in% input$Location2
             & drug_type %in% input$Substances2
             & measure %in% input$Measure2
           )%>%
-          select(year, hospital_type, clinical_type, activity_type,
+          select(year, hospital_type, diagnosis_type, activity_type,
                  geography_type, geography, drug_type,value)
       })
       
@@ -2088,16 +1951,17 @@ HTML('<div data-iframe-height></div>')
           color = ~  drug_type,
           colors = 
             #Colors are assigned to each drug type
-          c('#000000',  #Any drug type
-            '#004949',  #Cannabinoids
-            '#db6d00',  #Cocaine
-            '#ffb6db',  #Multiple/Other
-            '#920000',  #Other stimulants
-            '#b66dff',  #Sedatives/Hypnotics
-            '#006ddb',  #Opioids
-            '#6db6ff',  #Heroin
-            '#b6dbff',  #Methadone
-            '#490092'   #Other Opioids
+          c('#3F3685',  #Any drug type
+            '#9B4393',  #Cannabinoids
+            '#83BB26',  #Cocaine
+            '#948DA3',  #Multiple/Other,
+            '#1E7F84',  #Other stimulants
+            '#6B5C85',  #Sedatives/Hypnotics
+            '#C73918',  #Hallucinogens
+            '#0078D4',  #Opioids
+            '#9F9BC2',  #Heroin
+            '#CDA1C9',  #Methadone
+            '#80BCEA'   #Other Opioids
           ),
           name = ~ str_wrap(drug_type,10),
           #tooltip
@@ -2120,12 +1984,12 @@ HTML('<div data-iframe-height></div>')
             title = list (text = (paste0("<b>",str_sub(input$Activity_Type2,1,-2),
                                          " ",
                                          str_to_lower(input$Measure2),
-                                         "s for selected drug types 1996/97 to 2018/19",
+                                         "s for selected drug types 1996/97 to 2019/20",
                                          "<br>", "(",
                                          input$Location2, 
                                          "; ",
                                          input$Hospital_Type2, "; ",
-                                         word(input$Clinical_Type2, start = 1, sep = " \\("), 
+                                         word(input$Diagnosis_Type2, start = 1, sep = " \\("), 
                                          ")", "<b>")),
                           font = list (size=15)),
  
@@ -2134,7 +1998,7 @@ HTML('<div data-iframe-height></div>')
               list(x = 0.96, y = -0.27, 
                    text = paste0("Source: Drug-Related","<br>",
                                  "Hospital Statistics","<br>",
-                                 "(PHS, 2020)"), 
+                                 "(PHS, 2021)"), 
                    showarrow = F, xref='paper', yref='paper', 
                    xanchor='left', yanchor='auto', xshift=0, yshift=0,
                    font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -2173,7 +2037,7 @@ HTML('<div data-iframe-height></div>')
             #Wrap the x axis title in blank spaces so that it doesn't...
             #overlap with the x axis tick labels.
             
-            xaxis = list(range = c(-1,23),
+            xaxis = list(range = c(-1,24),
                          fixedrange = TRUE,
                          tickangle = -45,
                          title = paste0("<br>",
@@ -2251,11 +2115,11 @@ HTML('<div data-iframe-height></div>')
 ##############################################.
 
         
-        output$age_sex_clinical_type <- renderUI({
+        output$age_sex_diagnosis_type <- renderUI({
           shinyWidgets::pickerInput(
-            inputId = "Clinical_Type3",
+            inputId = "Diagnosis_Type3",
             label = "Diagnosis grouping",
-            choices = clinical_types
+            choices = diagnosis_types
           )
         })
         
@@ -2263,7 +2127,7 @@ HTML('<div data-iframe-height></div>')
           shinyWidgets::pickerInput(
             inputId = "Substances3",
             label = "Drug type",
-            choices = (if (input$Clinical_Type3 == "Overdose")
+            choices = (if (input$Diagnosis_Type3 == "Overdose")
               drug_types1
               else
                 drug_types2),
@@ -2283,7 +2147,7 @@ HTML('<div data-iframe-height></div>')
           age_sex %>%
             filter(
               hospital_type %in% input$Hospital_Type3
-              & clinical_type %in% input$Clinical_Type3
+              & diagnosis_type %in% input$Diagnosis_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
@@ -2291,7 +2155,7 @@ HTML('<div data-iframe-height></div>')
               & age_group %in% input$Age
               & sex %in% input$Sex
             ) %>%
-            select(year, hospital_type, clinical_type, activity_type,
+            select(year, hospital_type, diagnosis_type, activity_type,
                    drug_type, age_group,sex,value)
         })
 
@@ -2398,9 +2262,9 @@ HTML('<div data-iframe-height></div>')
             y = ~  value,
             color = ~  age_group,
             colors = #Colors are assigned 
-            c('#b66dff','#db6d00','#920000','#006ddb',
-              '#490092','#6db6ff',
-              '#b6dbff', '#000000'
+            c('#3F3685','#9B4393','#0078D4','#83BB26',
+              '#948DA3','#1E7F84',
+              '#6B5C85', '#C73918'
             ),
             #so we will use different linetypes to
             #distinguish between sex.
@@ -2423,9 +2287,9 @@ HTML('<div data-iframe-height></div>')
                                                 str_sub(input$Activity_Type3,1,-2),
                                                 " ",
                                                 str_to_lower(input$Measure3),
-                                                "s for selected age group/sex 1996/97 to 2018/19",
+                                                "s for selected age group/sex 1996/97 to 2019/20",
                                                 "<br>", "(Scotland; ",input$Hospital_Type3,"; ",
-                                                word(input$Clinical_Type3, start = 1, sep = " \\("), 
+                                                word(input$Diagnosis_Type3, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances3,
                                                 ")", "<b>")),
@@ -2435,7 +2299,7 @@ HTML('<div data-iframe-height></div>')
                      list(x = 0.98, y = -0.27, 
                           text = paste0("Source: Drug-Related","<br>",
                                         "Hospital Statistics","<br>",
-                                        "(PHS, 2020)"), 
+                                        "(PHS, 2021)"), 
                           showarrow = F, xref='paper', yref='paper', 
                           xanchor='left', yanchor='auto', xshift=0, yshift=0,
                           font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -2482,7 +2346,7 @@ HTML('<div data-iframe-height></div>')
                    #Wrap the x axis title in blank spaces so that it doesn't...
                    #overlap with the x axis tick labels.
                    
-                   xaxis = list(range = c(-1,23),fixedrange = TRUE,
+                   xaxis = list(range = c(-1,24),fixedrange = TRUE,
                      tickangle = -45, 
                                 title = paste0(
                                                  "<br>",
@@ -2578,7 +2442,7 @@ HTML('<div data-iframe-height></div>')
             filter(
               year %in% input$Financial_Year
               & hospital_type %in% input$Hospital_Type3
-              & clinical_type %in% input$Clinical_Type3
+              & diagnosis_type %in% input$Diagnosis_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
@@ -2589,7 +2453,7 @@ HTML('<div data-iframe-height></div>')
         age_sex_year_new_axis <- reactive({
           age_sex_tornado %>%
             filter(hospital_type %in% input$Hospital_Type3
-                   & clinical_type %in% input$Clinical_Type3
+                   & diagnosis_type %in% input$Diagnosis_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
@@ -2726,7 +2590,7 @@ HTML('<div data-iframe-height></div>')
                                                 input$Financial_Year,
                                                 "; ",
                                                 input$Hospital_Type3, "; ",
-                                                word(input$Clinical_Type3, start = 1, sep = " \\("), 
+                                                word(input$Diagnosis_Type3, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances3,
                                                 ")", "<b>")),
@@ -2831,7 +2695,7 @@ HTML('<div data-iframe-height></div>')
                 list(x = 0.99, y = -0.21, 
                      text = paste0("Source: Drug-Related","<br>",
                                    "Hospital Statistics","<br>",
-                                   "(PHS, 2020)"), 
+                                   "(PHS, 2021)"), 
                      showarrow = F, xref='paper', yref='paper', 
                      xanchor='left', yanchor='auto', xshift=0, yshift=0,
                      font=list(family = "arial", size=12, color="#7f7f7f")),
@@ -2881,7 +2745,7 @@ HTML('<div data-iframe-height></div>')
             filter(
               year %in% input$Financial_Year
               & hospital_type %in% input$Hospital_Type3
-              & clinical_type %in% input$Clinical_Type3
+              & diagnosis_type %in% input$Diagnosis_Type3
               & activity_type %in% input$Activity_Type3
               & drug_type %in% input$Substances3
               & measure %in% input$Measure3
@@ -2945,11 +2809,11 @@ HTML('<div data-iframe-height></div>')
 ##############################################.
       
         
-        output$SIMD_clinical_type <- renderUI({
+        output$SIMD_diagnosis_type <- renderUI({
           shinyWidgets::pickerInput(
-            inputId = "Clinical_Type4",
+            inputId = "Diagnosis_Type4",
             label = "Diagnosis grouping",
-            choices = clinical_types
+            choices = diagnosis_types
           )
         })
         
@@ -2957,7 +2821,7 @@ HTML('<div data-iframe-height></div>')
           shinyWidgets::pickerInput(
             inputId = "Substances4",
             label = "Drug type",
-            choices = (if (input$Clinical_Type4 == "Overdose")
+            choices = (if (input$Diagnosis_Type4 == "Overdose")
               drug_types1
               else
                 drug_types2),
@@ -2977,7 +2841,7 @@ HTML('<div data-iframe-height></div>')
           deprivation %>%
             filter(
               hospital_type %in% input$Hospital_Type4
-              & clinical_type %in% input$Clinical_Type4
+              & diagnosis_type %in% input$Diagnosis_Type4
               & geography %in% input$Location3
               & activity_type %in% input$Activity_Type4
               & drug_type %in% input$Substances4
@@ -2985,7 +2849,7 @@ HTML('<div data-iframe-height></div>')
               #and the year options
               & year %in% input$Financial_Year2
             )%>%
-            select(year, hospital_type, clinical_type, activity_type,
+            select(year, hospital_type, diagnosis_type, activity_type,
                    geography_type,geography,drug_type,simd, value) %>% 
             droplevels()
         })
@@ -3059,9 +2923,9 @@ HTML('<div data-iframe-height></div>')
             x = ~  simd,
             y = ~  value,
             color = ~ geography,
-            colors = c('#006ddb','#db6d00','#920000',
-                '#ffb6db','#490092','#6db6ff',
-                '#000000','#004949')[1:length(input$Location3)],
+            colors = c('#3F3685','#9B4393','#0078D4',
+                '#83BB26','#948DA3','#1E7F84',
+                '#6B5C85','#C73918')[1:length(input$Location3)],
             type = 'bar',
             #tooltip,
             name = ~ str_wrap(geography,10),
@@ -3084,7 +2948,7 @@ HTML('<div data-iframe-height></div>')
                                                 input$Financial_Year2,
                                                 "; ",
                                                 input$Hospital_Type4, "; ",
-                                                word(input$Clinical_Type4, start = 1, sep = " \\("), 
+                                                word(input$Diagnosis_Type4, start = 1, sep = " \\("), 
                                                 "; ",
                                                 input$Substances4,
                                                 ")", "<b>")),
@@ -3096,7 +2960,7 @@ HTML('<div data-iframe-height></div>')
                      list(x = 0.97, y = -0.21, 
                           text = paste0("Source: Drug-Related","<br>",
                                         "Hospital Statistics","<br>",
-                                        "(PHS, 2020)"), 
+                                        "(PHS, 2021)"), 
                           showarrow = F, xref='paper', yref='paper', 
                           xanchor='left', yanchor='auto', xshift=0, yshift=0,
                           font=list(family = "arial", size=12, color="#7f7f7f")),  
@@ -3230,7 +3094,7 @@ HTML('<div data-iframe-height></div>')
           deprivation_local %>%
             filter(
               hospital_type %in% input$Hospital_Type4
-              & clinical_type %in% input$Clinical_Type4
+              & diagnosis_type %in% input$Diagnosis_Type4
               & activity_type %in% input$Activity_Type4
               & geography %in% input$Location4
               & drug_type %in% input$Substances4
@@ -3238,7 +3102,7 @@ HTML('<div data-iframe-height></div>')
               #and the year options
               & year %in% input$Financial_Year2
             )%>%
-            select(year, hospital_type, clinical_type, activity_type,
+            select(year, hospital_type, diagnosis_type, activity_type,
                    geography_type,geography,drug_type,simd, value)
         })
         
@@ -3307,9 +3171,11 @@ HTML('<div data-iframe-height></div>')
             
             plot_ly(
               data = SIMD_local_new(),
-              #plot- we wont bother at this point with tailored colour
+              #plot- 
               x = ~  simd,
               y = ~  value,
+              color = ~ geography,
+              colors = '#3F3685',
               #tooltip
               text = tooltip_SIMD_local,
               hoverinfo = "text",
@@ -3332,7 +3198,7 @@ HTML('<div data-iframe-height></div>')
                                                    input$Financial_Year2,
                                                    "; ",
                                                    input$Hospital_Type4,"; ",
-                                                   word(input$Clinical_Type4, start = 1, sep = " \\("), 
+                                                   word(input$Diagnosis_Type4, start = 1, sep = " \\("), 
                                                    "; ",
                                                    input$Substances4,
                                                    ")", "<b>")),
@@ -3344,7 +3210,7 @@ HTML('<div data-iframe-height></div>')
                         list(x = 0.97, y = -0.21, 
                              text = paste0("Source: Drug-Related","<br>",
                                            "Hospital Statistics","<br>",
-                                           "(PHS, 2020)"), 
+                                           "(PHS, 2021)"), 
                              showarrow = F, xref='paper', yref='paper', 
                              xanchor='left', yanchor='auto', xshift=0, yshift=0,
                              font=list(family = "arial", size=12, color="#7f7f7f")),  
@@ -3487,7 +3353,7 @@ HTML('<div data-iframe-height></div>')
                  "Time trend (Data explorer)" = time_trend %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Activity type" = activity_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
@@ -3497,7 +3363,7 @@ HTML('<div data-iframe-height></div>')
                  "Age/sex (Data explorer)" = age_sex %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Activity type" = activity_type,
                           "Drug type" = drug_type,
                           "Age group" = age_group,
@@ -3507,7 +3373,7 @@ HTML('<div data-iframe-height></div>')
                  "Deprivation comparison (Data explorer)" = deprivation %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Activity type" = activity_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
@@ -3518,7 +3384,7 @@ HTML('<div data-iframe-height></div>')
                  "Deprivation profile (Data explorer)" = deprivation_local %>%
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Activity type" = activity_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
@@ -3529,7 +3395,7 @@ HTML('<div data-iframe-height></div>')
                  "Activity summary (Trend data)" = activity_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
-                        "Diagnosis grouping" = clinical_type,
+                        "Diagnosis grouping" = diagnosis_type,
                         "Activity type" = activity_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
@@ -3537,7 +3403,7 @@ HTML('<div data-iframe-height></div>')
                  "Drug summary (Trend data)" = drug_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
-                        "Diagnosis grouping" = clinical_type,
+                        "Diagnosis grouping" = diagnosis_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Drug type" = drug_type,
@@ -3545,7 +3411,7 @@ HTML('<div data-iframe-height></div>')
                  "Demographic summary (Trend data)" = demographic_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
-                        "Diagnosis grouping" = clinical_type,
+                        "Diagnosis grouping" = diagnosis_type,
                         "Location type" = geography_type, 
                         "Location" = geography, 
                         "Age group" = age_group,
@@ -3555,7 +3421,7 @@ HTML('<div data-iframe-height></div>')
                  "Length of stay" = length_of_stay %>% 
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
                           "Drug type" = drug_type,
@@ -3570,7 +3436,7 @@ HTML('<div data-iframe-height></div>')
                  "Emergency admissions" = emergency_admissions %>% 
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Location type" = geography_type, 
                           "Location" = geography, 
                           "Drug type" = drug_type,
@@ -3586,7 +3452,7 @@ HTML('<div data-iframe-height></div>')
                  "Drug type by hospital" = drug_type_by_hospital %>% 
                    rename("Financial year" = year, 
                           "Hospital type" = hospital_type,
-                          "Diagnosis grouping" = clinical_type,
+                          "Diagnosis grouping" = diagnosis_type,
                           "Activity type" = activity_type, 
                           "Drug type" = drug_type,
                           "SMR01 (%)" = perc_source01,
