@@ -41,11 +41,12 @@ time_trend<- readRDS('time_trend.rds')
 age_sex <- readRDS('age_sex.rds')
 deprivation  <- readRDS('deprivation.rds')
 deprivation_local <- readRDS('deprivation_local.rds')
+monthly <- readRDS('r12-temp02_monthly_R_SHINY_rounded.rds')
 
 #Data that is not visualized  
-length_of_stay <- readRDS("r07-temp02_lsty_R_SHINY_rounded.rds")
-emergency_admissions<- readRDS("r08-temp02_emerAdm_R_SHINY_rounded.rds")
-drug_type_by_hospital<-readRDS ("r09-temp02_dist_hospit_R_SHINY_rounded.rds")
+length_of_stay <- readRDS("r09-temp02_lsty_R_SHINY_rounded.rds")
+emergency_admissions<- readRDS("r10-temp02_emerAdm_R_SHINY_rounded.rds")
+drug_type_by_hospital<-readRDS ("r11-temp02_dist_hospit_R_SHINY_rounded.rds")
 
 
 #We then create the options for users to choose from in the drop down menus. 
@@ -194,6 +195,13 @@ tabsetPanel(
       ),
       tags$li(
         tags$b(actionLink(
+          "link_to_monthly", "Monthly trend"
+        )),
+        icon("line-chart"),
+        " - show data by month."
+      ),
+      tags$li(
+        tags$b(actionLink(
           "link_to_table", "Data"
         )),
         icon("table"),
@@ -221,7 +229,7 @@ tabsetPanel(
                         activity."
                       ),
                       tags$li(
-                        "Information is generally available for financial years 1996/97 to 2019/20.
+                        "Information is generally available for financial years 1996/97 to 2020/21.
                         Where shown, Alcohol and Drug Partnership (ADP) information is available from 1997/98 and new patient trends 
                         are available from 2006/07."
                       ),
@@ -859,7 +867,7 @@ p(
           inputId = "Financial_Year",
           label = "Financial year",
           choices = financial_years,
-          selected = "2019/20",
+          selected = "2020/21",
           grid = T,
           animate = animationOptions(playButton = icon('play', 
                                                       "fa fa-play-circle fa-3x"),
@@ -1071,7 +1079,7 @@ tabPanel(
         inputId = "Financial_Year2",
         label = "Financial year",
         choices = financial_years,
-        selected = "2019/20",
+        selected = "2020/21",
         grid = T,
         animate = animationOptions(playButton = icon('play', 
                                                      "fa fa-play-circle fa-3x"),
@@ -1214,7 +1222,317 @@ tabPanel(
 #End of tab panel
 ),
     
+##############################################.
+############## Monthly tab ----
+##############################################.
 
+#Create a tab for monthly data.
+#Insert the description a
+
+tabPanel(
+  "Monthly trend",
+  icon = icon("line-chart"),
+  style = "height: 95%; width: 95%; background-color: #FFFFFF;
+  border: 0px solid #FFFFFF;",
+  
+  h3("Monthly Trend"),
+  
+  p(
+    h4(
+      "Visualise drug-related hospital monthly activity over time and make
+      comparisons between years ")
+    ),
+  
+  bs_accordion(id = "drhs_monthly_trend_text") %>% 
+    bs_set_opts(panel_type = "primary") %>%
+    bs_append(title = tags$u("Data selection"), 
+              content = p(
+                "The toggle buttons allow the data to be visualised in three ways:", 
+                tags$ul(
+                  tags$li(
+                    tags$b("Location comparison"),
+                    icon("globe-europe"),
+                    " - displays data based on location for Scotland, NHS Boards or ADPs."
+                  ),
+                  tags$li(
+                    tags$b("Drug type comparison"),
+                    icon("tablets"),
+                    " - displays data based on drug type"
+                  ),
+                  tags$li(
+                    tags$b("Age group comparison"),
+                    icon("child"),
+                    " - displays data based on age group"
+                  )),
+                p("The charts can be modified using the drop down boxes:"), 
+                tags$ul(
+                  tags$li("Hospital type: general acute or psychiatric 
+                          hospital data (or any hospital type);"),
+                  tags$li("Diagnosis grouping: mental & behavioural stays, 
+                          accidental poisoning/overdose stays (or any diagnosis);"),
+                  tags$li("Financial year: between 1996/97 to 2020/21")
+                  ), 
+                "To download your data selection as a CSV file, use the
+                'Download data' button under the drop down boxes.", 
+                br(),br(),
+                "For technical information, please see the",
+                actionLink(
+                  "link_to_home5", "introduction"
+                ), " page."
+                  ))%>%
+    bs_append(title = tags$u("Chart functions"), 
+              content = p("At the top-right corner of the chart, you will see a ",
+                          icon("camera"), "icon: use this to save an image of the chart ",
+                          HTML(paste0("(",tags$b("not"))), 
+                          tags$b("available in Internet "),
+                          HTML(paste0(tags$b("Explorer"),").")),
+                          br(),br(),
+                          "Categories can be shown/hidden by clicking on labels in the
+                          legend to the right of the chart.")
+              )%>%
+    bs_append(title = tags$u("Table functions"), 
+              content = p(HTML("To view 
+                               your data selection in a table, use the <a href = '#geography_link'> 
+                               'Show/hide table' </a>  button at the
+                               bottom of the page."),
+                          tags$ul(
+                            tags$li(tags$b("Show entries"), " - change the number of rows shown
+                                    in the table using the drop-down box."),
+                            tags$li(tags$b("Search"), " - enter text to search data for a specific word or
+                                    numerical value."),
+                            tags$li(icon("sort", lib = "glyphicon"),
+                                    tags$b("Sort"), " - click to sort the table in ascending or 
+                                    descending order based on the values in a column."),
+                            tags$li(tags$b("Page controls"), " - switch to specific page of data 
+                                    within the table.")
+                            )
+                            )),
+  p(
+    tags$b(
+      "Note: Statistical disclosure control has been applied to protect
+      patient confidentiality. Therefore, the figures presented here
+      may not be additive and may differ from previous publications."
+    )
+    ),
+  
+  p(""),
+  
+  wellPanel(
+    tags$style(
+      ".well { background-color: #FFFFFF;
+      border: 0px solid #336699; }"
+    ),
+    
+    #Insert the reactive filters.
+    #We have SIX filters at this point 
+    # 1 - Hospital type
+    # 2 - Diagnosis Type
+    # 3 - Location 
+    # 4 - Year
+    # 5 - Substance
+    # 6 - Age
+    
+    column(
+      4,
+      shinyWidgets::pickerInput(
+        inputId = "Hospital_Type5",
+        label = "Hospital type",
+        choices = hospital_types
+      )
+    ),
+    
+    column(
+      4,
+      uiOutput("monthly_diagnosis_type")#, 
+      #uiOutput("monthly_substance")
+    ),
+    
+    column(
+      4,
+      shinyWidgets::pickerInput(
+        inputId = "Financial_Year3",
+        label = "Financial year (multiple selection)",
+        choices = rev(financial_years),
+        multiple = TRUE,
+        selected = "2020/21",
+        options = list(size=10,  
+                       `selected-text-format` = "count > 1", 
+                       `count-selected-text` = "{0} years chosen (8 Max)",
+                       "max-options" = 8,
+                       "max-options-text" = "Only 8 options can be chosen")
+      )
+    )
+    
+  ),
+  #In the main panel of the tab, insert the various plots
+  mainPanel(width = 12, 
+            tabsetPanel(
+              type = "pills",
+              tabPanel(
+                "Location",
+                tags$style(
+                  HTML("
+                       .tabbable > .nav > li > a[data-value = 'Location'] {background-color: #D3D3D3; color: #000000;}
+                       .tabbable > .nav > li > a[data-value = 'Drug Type'] {background-color: #D3D3D3; color: #000000;}
+                       .tabbable > .nav > li > a[data-value = 'Age Group'] {background-color: #D3D3D3; color: #000000;}
+                       .tabbable > .nav > li[class = active] > a {background-color: #0072B2;color: #FFFFFF;} 
+                       ") 
+                  ),
+                icon = icon("line-chart"),
+                style = "height: 95%; width: 95%; background-color: #FFFFFF;
+                border: 0px solid #FFFFFF;",
+                br(),
+                br(),
+                column(4,
+                  shinyWidgets::pickerInput(
+                    inputId = "Location5",
+                    label = "Location",
+                    choices = geography_list,
+                    selected = "Scotland",
+                    options = list(size=10, 
+                                   `live-search`=TRUE))
+                ),
+                column(4, br(),
+                       downloadButton(
+                         outputId = "download_Monthly_Location",
+                         label = "Download data",
+                         class = "myMonthlyLocationbutton"
+                       ),
+                       tags$head(
+                         tags$style(
+                           "myMonthlyLocationbutton { background-color:
+               #0072B2; }
+               myMonthlyLocationbutton { color: #FFFFFF; }"
+                         )
+                       )),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                plotlyOutput("monthly_location_plot",
+                             width = "1090px",
+                             height = "500px"),
+                br(),
+                HTML(
+                  "<button data-toggle = 'collapse' href = '#Monthly_location_chart'
+      class = 'btn btn-primary' id = 'Monthly_location_link'>
+      <strong>Show/hide table</strong></button>"
+                ),
+                HTML("<div id = 'Monthly_location_chart' class = 'collapse'>"),
+                br(),
+                dataTableOutput("Monthly_location_table"),
+                HTML("</div>"),
+                br(),
+                br()
+                
+                # End of location sub-Tab panel
+                ),
+              
+              tabPanel(
+                "Drug type",
+                icon = icon("line-chart"),
+                style = "height: 95%; width: 95%; background-color: #FFFFFF;
+                border: 0px solid #FFFFFF;",
+                br(),
+                br(),
+                column(4, uiOutput("monthly_substance")),
+                column(4, br(),
+                       downloadButton(
+                         outputId = "download_Monthly_Drugs",
+                         label = "Download data",
+                         class = "myMonthlyDrugsbutton"
+                       ),
+                       tags$head(
+                         tags$style(
+                           "myMonthlyDrugsbutton { background-color:
+               #0072B2; }
+               myMonthlyDrugsbutton { color: #FFFFFF; }"
+                         )
+                       )),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                plotlyOutput("monthly_drugs_plot",
+                             width = "1090px",
+                             height = "500px"),
+                br(),
+                HTML(
+                  "<button data-toggle = 'collapse' href = '#Monthly_drugs_chart'
+      class = 'btn btn-primary' id = 'Monthly_drugs_link'>
+      <strong>Show/hide table</strong></button>"
+                ),
+                HTML("<div id = 'Monthly_drugs_chart' class = 'collapse'>"),
+                br(),
+                dataTableOutput("Monthly_drugs_table"),
+                HTML("</div>"),
+                br(),
+                br()
+                
+                # End of drug sub-Tab panel
+              ),
+              tabPanel(
+                "Age group",
+                icon = icon("line-chart"),
+                style = "height: 95%; width: 95%; background-color: #FFFFFF;
+                border: 0px solid #FFFFFF;",
+                br(),
+                br(),
+                column(4, 
+                       shinyWidgets::pickerInput(
+                         inputId = "Ages2",
+                         label = "Age group",
+                         choices = age,
+                         selected = "All age groups")
+                ),
+                column(4, br(),
+                       downloadButton(
+                         outputId = "download_Monthly_Age",
+                         label = "Download data",
+                         class = "myMonthlyAgebutton"
+                       ),
+                       tags$head(
+                         tags$style(
+                           "myMonthlyAgebutton { background-color:
+               #0072B2; }
+               myMonthlyAgebutton { color: #FFFFFF; }"
+                         )
+                       )),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                br(),
+                plotlyOutput("monthly_age_plot",
+                             width = "1090px",
+                             height = "500px"),
+                br(),
+                HTML(
+                  "<button data-toggle = 'collapse' href = '#Monthly_age_chart'
+      class = 'btn btn-primary' id = 'Monthly_age_link'>
+      <strong>Show/hide table</strong></button>"
+                ),
+                HTML("<div id = 'Monthly_age_chart' class = 'collapse'>"),
+                br(),
+                dataTableOutput("Monthly_age_table"),
+                HTML("</div>"),
+                br(),
+                br()
+                # End of age sub-Tab panel
+              )
+              
+                  )
+              )
+  
+
+  
+  #End of tab panel
+    ),
 
 ##############################################.
 ############## Data tab ----
@@ -1280,6 +1598,7 @@ tabPanel(
                                  "Age/sex (Data explorer)", 
                                  "Deprivation comparison (Data explorer)", 
                                  "Deprivation profile (Data explorer)", 
+                                 "Monthly trends (Data explorer)",
                                  "Activity summary (Trend data)",
                                  "Drug summary (Trend data)",
                                  "Demographic summary (Trend data)",
@@ -1375,6 +1694,13 @@ HTML('<div data-iframe-height></div>')
         })
       
       observeEvent(
+        input$link_to_home5,
+        {
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Introduction")
+        })
+      
+      observeEvent(
         input$link_to_geography,
         {
           updateTabsetPanel(session, "Panels", 
@@ -1399,6 +1725,12 @@ HTML('<div data-iframe-height></div>')
                             selected = "Deprivation")
         })
       observeEvent(
+        input$link_to_monthly,
+        {
+          updateTabsetPanel(session, "Panels", 
+                            selected = "Monthly trend")
+        })
+      observeEvent(
         input$link_to_table,
         {
           updateTabsetPanel(session, "Panels", 
@@ -1410,9 +1742,9 @@ HTML('<div data-iframe-height></div>')
 ############## Geography tab ----
 ##############################################.  
       
-      #We need to include the input for geography types in the server section 
+      #We need to include the input for diagnosis types and substances in the server section 
       #rather than the UI section. 
-      #This is because the 'location' input is dependent on the 'location
+      #This is because the 'substances' input is dependent on the 'diagnosis
       #type' input. 
       
 
@@ -1623,7 +1955,7 @@ HTML('<div data-iframe-height></div>')
                                        str_sub(input$Activity_Type,1,-2),
                                        " ",
                                        str_to_lower(input$Measure),
-                                       "s for selected locations 1996/97 to 2019/20",
+                                       "s for selected locations 1996/97 to 2020/21",
                                        "<br>", "(",input$Hospital_Type,"; ",
                                        word(input$Diagnosis_Type, start = 1, sep = " \\("), 
                                        "; ",
@@ -1683,12 +2015,14 @@ HTML('<div data-iframe-height></div>')
                  #Wrap the x axis title in blank spaces so that it doesn't...
                  #overlap with the x axis tick labels.
                  
-                 xaxis = list(range = c(-1,24),
+                 xaxis = list(range = c(-1,25),
                               fixedrange = TRUE,
-                              tickangle = -45,
-                              title = paste0("<br>",
+                              tickangle = 0,
+                              autotick = F,
+                              dtick = 3,
+                              title = paste0( "Financial year",
                                                "<br>",
-                                               "Financial year"),
+                                               "<br>"),
                               showline = TRUE,
                               ticks = "outside"),
         
@@ -1984,7 +2318,7 @@ HTML('<div data-iframe-height></div>')
             title = list (text = (paste0("<b>",str_sub(input$Activity_Type2,1,-2),
                                          " ",
                                          str_to_lower(input$Measure2),
-                                         "s for selected drug types 1996/97 to 2019/20",
+                                         "s for selected drug types 1996/97 to 2020/21",
                                          "<br>", "(",
                                          input$Location2, 
                                          "; ",
@@ -2037,12 +2371,14 @@ HTML('<div data-iframe-height></div>')
             #Wrap the x axis title in blank spaces so that it doesn't...
             #overlap with the x axis tick labels.
             
-            xaxis = list(range = c(-1,24),
+            xaxis = list(range = c(-1,25),
                          fixedrange = TRUE,
-                         tickangle = -45,
-                         title = paste0("<br>",
+                         tickangle = 0,
+                         autotick = F,
+                         dtick = 3,
+                         title = paste0("Financial year",
                                         "<br>",
-                                        "Financial year"),
+                                        "<br>"),
                          showline = TRUE,
                          ticks = "outside"),
             
@@ -2287,7 +2623,7 @@ HTML('<div data-iframe-height></div>')
                                                 str_sub(input$Activity_Type3,1,-2),
                                                 " ",
                                                 str_to_lower(input$Measure3),
-                                                "s for selected age group/sex 1996/97 to 2019/20",
+                                                "s for selected age group/sex 1996/97 to 2020/21",
                                                 "<br>", "(Scotland; ",input$Hospital_Type3,"; ",
                                                 word(input$Diagnosis_Type3, start = 1, sep = " \\("), 
                                                 "; ",
@@ -2346,12 +2682,14 @@ HTML('<div data-iframe-height></div>')
                    #Wrap the x axis title in blank spaces so that it doesn't...
                    #overlap with the x axis tick labels.
                    
-                   xaxis = list(range = c(-1,24),fixedrange = TRUE,
-                     tickangle = -45, 
-                                title = paste0(
-                                                 "<br>",
-                                                 "<br>",
-                                                 "Financial year"
+                   xaxis = list(range = c(-1,25),
+                                fixedrange = TRUE,
+                                tickangle = 0,
+                                autotick = F,
+                                dtick = 3, 
+                                title = paste0("Financial year",
+                                               "<br>",
+                                               "<br>"
                                                  ),
                                 showline = TRUE, 
                                 ticks = "outside"),
@@ -2957,7 +3295,7 @@ HTML('<div data-iframe-height></div>')
                    
                    separators = ".,",
                    annotations = 
-                     list(x = 0.97, y = -0.21, 
+                     list(x = 0.97, y = -0.27, 
                           text = paste0("Source: Drug-Related","<br>",
                                         "Hospital Statistics","<br>",
                                         "(PHS, 2021)"), 
@@ -3000,9 +3338,9 @@ HTML('<div data-iframe-height></div>')
                    #overlap with the x axis tick labels.
                    
                    xaxis = list( fixedrange = TRUE,
-                                title = paste0("<br>",
+                                title = paste0("Deprivation quintile",
                                                "<br>",
-                                               "Deprivation quintile"),
+                                               "<br>"),
                                 showline = TRUE, 
                                 ticks = "outside"),
                    
@@ -3207,7 +3545,7 @@ HTML('<div data-iframe-height></div>')
                       
                       separators = ".,",
                       annotations = 
-                        list(x = 0.97, y = -0.21, 
+                        list(x = 0.97, y = -0.27, 
                              text = paste0("Source: Drug-Related","<br>",
                                            "Hospital Statistics","<br>",
                                            "(PHS, 2021)"), 
@@ -3251,9 +3589,9 @@ HTML('<div data-iframe-height></div>')
                       #overlap with the x axis tick labels.
                       
                       xaxis = list( fixedrange = TRUE,
-                        title = paste0("<br>",
+                        title = paste0("Deprivation quintile",
                                        "<br>",
-                                       "Deprivation quintile"),
+                                       "<br>"),
                         showline = TRUE, 
                         ticks = "outside"),
                       
@@ -3336,7 +3674,730 @@ HTML('<div data-iframe-height></div>')
             )
           }
         )
+  
         
+##############################################.
+############## Monthly tab ----
+##############################################.  
+
+#We need to include the input for diagnosis types and substances in the server section 
+#rather than the UI section. 
+#This is because the 'substances' input is dependent on the 'diagnosis
+#type' input. 
+        
+        
+        output$monthly_diagnosis_type <- renderUI({
+          shinyWidgets::pickerInput(inputId = "Diagnosis_Type5", 
+                                    label = "Diagnosis grouping",
+                                    choices = diagnosis_types)
+        })
+        
+        
+        output$monthly_substance <- renderUI({
+          shinyWidgets::pickerInput(
+            inputId = "Substances5",
+            label = "Drug type",
+            choices = (if (input$Diagnosis_Type5 == "Overdose")
+              drug_types1
+              else
+                drug_types2),
+            selected = "All"
+          )
+        })
+
+        
+        
+        #So here we need to create three graphs
+        #1) Location - a line chart showing the change over time by chosen Location.
+        #2) Drugs - a line chart showing the change over time by chosen Drugs
+        #3) Age Group - a line chart showing the change over time by chosen Age Group
+        
+        
+        #1) Monthly Location ####
+        
+        #Filter it by options for time trend
+        monthly_location_new <- reactive({
+          monthly %>%
+            filter(
+              year %in% input$Financial_Year3 
+              & hospital_type %in% input$Hospital_Type5
+              & diagnosis_type %in% input$Diagnosis_Type5
+              & drug_type == 'Any drug type'
+              & age_group == 'All age groups'
+              & geography == input$Location5
+            ) %>%
+            select(year, financial_month,
+                   hospital_type, diagnosis_type, 
+                   geography, 
+                   number)%>% 
+            droplevels(except= c(2,5))
+        })
+        
+        
+        # #Create the main body of the chart.
+        output$monthly_location_plot <- renderPlotly({
+          
+          #Now let's create alt message.
+          
+          if (is.null(input$Financial_Year3))
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Please make a selection from the drop down menus", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, editable = F) 
+            
+          }
+          
+          else {
+          
+
+            #Add in a tooltip
+            tooltip_monthly_location <- paste0(
+              "Financial year: ",
+              monthly_location_new()$year,
+              "<br>",
+              "Month: ",
+              monthly_location_new()$financial_month,
+              "<br>",
+              "Number: ",
+              monthly_location_new()$number
+              )
+
+            plot_ly(
+              data = monthly_location_new(),
+              #plot
+              x = ~  financial_month,
+              y = ~  number,
+              color = ~  year,
+              colors =             #We use 8 colours that are considered to be 
+                #blind friendly
+                c('#3F3685','#9B4393','#0078D4',
+                  '#83BB26','#948DA3','#1E7F84',
+                  '#6B5C85','#C73918'
+                )[1:length(input$Financial_Year3)],
+              #tooltip
+              text = tooltip_monthly_location,
+              hoverinfo = "text",
+              #type
+              type = 'scatter',
+              mode = 'lines+markers',
+              marker = list(size = 7),
+              width = 1000,
+              height = 500
+            ) %>%
+
+              #Make the graph title reactive.
+
+              layout(
+                title = list (text = (paste0("<b>",
+                                             "Number of hospital stays by month for selected financial years",
+                                             "<br>", "(",
+                                             input$Location5, 
+                                             "; ",
+                                             input$Hospital_Type5, "; ",
+                                             word(input$Diagnosis_Type5, start = 1, sep = " \\("), 
+                                             ")", "<b>")),
+                              font = list (size=15)),
+                separators = ".,",
+                annotations =
+                  list(x = 0.98, y = -0.27,
+                       text = paste0("Source: Drug-Related","<br>",
+                                     "Hospital Statistics","<br>",
+                                     "(PHS, 2021)"),
+                       showarrow = F, xref='paper', yref='paper',
+                       xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                       font=list(family = "arial", size=12, color="#7f7f7f")),
+
+                #We need to fix the range of the y axis, as R refuses to set...
+                #the lower end of this axis to zero.
+                #The following "range" command fixes the lower end to...
+                #zero, and calculates the upper end as the maximum...
+                #number visualised in the graph + 10% of this number.
+                #Also, wrap the y axis title in blank spaces so it doesn't...
+                #overlap with the y axis tick labels.
+                #Finally, make the y axis title reactive.
+
+                yaxis = list(
+
+                  exponentformat = "none",
+
+                  separatethousands = TRUE,
+
+                  range = c(0, max(age_sex_time_new()$number, na.rm = TRUE) +
+                              (max(age_sex_time_new()$number, na.rm = TRUE)
+                               * 10 / 100)), fixedrange = TRUE,
+
+                  title = "Number",
+                  showline = TRUE,
+                  ticks = "outside"
+
+                ),
+
+                #Set the tick angle to minus 45. It's the only way for the x...
+                #axis tick labels (fin. years) to display without overlapping...
+                #with each other.
+                #Wrap the x axis title in blank spaces so that it doesn't...
+                #overlap with the x axis tick labels.
+
+                xaxis = list(range = c(-1,12),fixedrange = TRUE,
+                             tickangle = 0,
+                             autotick = F,
+                             dtick = 2,
+                             title = paste0("Month",
+                                            "<br>",
+                                            "<br>"
+                             ),
+                             showline = TRUE,
+                             ticks = "outside"),
+
+                #Fix the margins so that the graph and axis titles have enough...
+                #room to display nicely.
+                #Set the font sizes.
+
+                margin = list(l = 90, r = 60, b = 70, t = 90),
+                font = list(size = 13),
+
+                #Insert a legend so that the user knows which colour...
+                #corresponds to which location of treatment.
+                #Make the legend background and legend border white.
+
+                showlegend = TRUE,
+                legend = list(bgcolor = 'rgba(255, 255, 255, 0)',
+                              bordercolor = 'rgba(255, 255, 255, 0)')) %>%
+
+              #Remove unnecessary buttons from the modebar.
+
+              config(displayModeBar = TRUE,
+                     modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                                   'zoomOut2d', 'autoScale2d',
+                                                   'toggleSpikelines',
+                                                   'hoverCompareCartesian',
+                                                   'hoverClosestCartesian'),
+                     displaylogo = F, editable = F)
+          }
+        })
+
+        
+        
+        #Table
+        output$Monthly_location_table <- renderDataTable({
+          datatable(
+            monthly_location_new(),
+            style = 'bootstrap',
+            rownames = FALSE,
+            colnames = c(
+              "Financial year",
+              "Financial month",
+              "Hospital  type",
+              "Diagnosis grouping",
+              "Location",
+              "Number"
+            )
+          ) 
+        })
+        
+        #Download button
+        
+        output$download_Monthly_Location <- downloadHandler(
+          filename = 'location_monthly_data.csv',
+          content = function(file) {
+            write.table(
+              monthly_location_new(),
+              file,
+              #Remove row numbers as the CSV file already has row numbers.
+              
+              row.names = FALSE,
+              col.names = c(
+                "Financial year",
+                "Financial Month",
+                "Hospital  type",
+                "Diagnosis grouping",
+                "Location",
+                "Number"
+              ),
+              sep = ","
+            )
+          }
+        )     
+              
+        #2) Monthly Drugs ####
+        
+        #Filter it by options for time trend
+        monthly_drugs_new <- reactive({
+          monthly %>%
+            filter(
+              year %in% input$Financial_Year3 
+              & hospital_type %in% input$Hospital_Type5
+              & diagnosis_type %in% input$Diagnosis_Type5
+              & drug_type == input$Substances5
+              & age_group == 'All age groups'
+              & geography == 'Scotland'
+            ) %>%
+            select(year, financial_month,
+                   hospital_type, diagnosis_type, 
+                   drug_type, 
+                   number)%>% 
+            droplevels(except= c(2,5))
+        })
+        
+        
+        # #Create the main body of the chart.
+        output$monthly_drugs_plot <- renderPlotly({
+          
+          #Now let's create alt message.
+          
+          if (is.null(input$Financial_Year3))
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Please make a selection from the drop down menus", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, editable = F) 
+            
+          }
+          
+          else {
+          
+          #Add in a tooltip
+          tooltip_monthly_drugs <- paste0(
+            "Financial year: ",
+            monthly_drugs_new()$year,
+            "<br>",
+            "Month: ",
+            monthly_drugs_new()$financial_month,
+            "<br>",
+            "Number: ",
+            monthly_drugs_new()$number
+          )
+          
+          plot_ly(
+            data = monthly_drugs_new(),
+            #plot
+            x = ~  financial_month,
+            y = ~  number,
+            color = ~  year,
+            colors =             #We use 8 colours that are considered to be 
+              #blind friendly
+              c('#3F3685','#9B4393','#0078D4',
+                '#83BB26','#948DA3','#1E7F84',
+                '#6B5C85','#C73918'
+              )[1:length(input$Financial_Year3)],
+            #tooltip
+            text = tooltip_monthly_drugs,
+            hoverinfo = "text",
+            #type
+            type = 'scatter',
+            mode = 'lines+markers',
+            marker = list(size = 7),
+            width = 1000,
+            height = 500
+          ) %>%
+            
+            #Make the graph title reactive.
+            
+            layout(
+              title = list (text = (paste0("<b>",
+                                           "Number of hospital stays by month for selected financial years",
+                                           "<br>", "(Scotland; ",
+                                           input$Hospital_Type5, "; ",
+                                           word(input$Diagnosis_Type5, start = 1, sep = " \\("), "; ",
+                                           input$Substances5,
+                                           ")", "<b>")),
+                            font = list (size=15)),
+              separators = ".,",
+              annotations =
+                list(x = 0.98, y = -0.27,
+                     text = paste0("Source: Drug-Related","<br>",
+                                   "Hospital Statistics","<br>",
+                                   "(PHS, 2021)"),
+                     showarrow = F, xref='paper', yref='paper',
+                     xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                     font=list(family = "arial", size=12, color="#7f7f7f")),
+              
+              #We need to fix the range of the y axis, as R refuses to set...
+              #the lower end of this axis to zero.
+              #The following "range" command fixes the lower end to...
+              #zero, and calculates the upper end as the maximum...
+              #number visualised in the graph + 10% of this number.
+              #Also, wrap the y axis title in blank spaces so it doesn't...
+              #overlap with the y axis tick labels.
+              #Finally, make the y axis title reactive.
+              
+              yaxis = list(
+                
+                exponentformat = "none",
+                
+                separatethousands = TRUE,
+                
+                range = c(0, max(age_sex_time_new()$number, na.rm = TRUE) +
+                            (max(age_sex_time_new()$number, na.rm = TRUE)
+                             * 10 / 100)), fixedrange = TRUE,
+                
+                title = "Number",
+                showline = TRUE,
+                ticks = "outside"
+                
+              ),
+              
+              #Set the tick angle to minus 45. It's the only way for the x...
+              #axis tick labels (fin. years) to display without overlapping...
+              #with each other.
+              #Wrap the x axis title in blank spaces so that it doesn't...
+              #overlap with the x axis tick labels.
+              
+              xaxis = list(range = c(-1,12),fixedrange = TRUE,
+                           tickangle = 0,
+                           autotick = F,
+                           dtick = 2,
+                           title = paste0("Month",
+                                          "<br>",
+                                          "<br>"
+                           ),
+                           showline = TRUE,
+                           ticks = "outside"),
+              
+              #Fix the margins so that the graph and axis titles have enough...
+              #room to display nicely.
+              #Set the font sizes.
+              
+              margin = list(l = 90, r = 60, b = 70, t = 90),
+              font = list(size = 13),
+              
+              #Insert a legend so that the user knows which colour...
+              #corresponds to which location of treatment.
+              #Make the legend background and legend border white.
+              
+              showlegend = TRUE,
+              legend = list(bgcolor = 'rgba(255, 255, 255, 0)',
+                            bordercolor = 'rgba(255, 255, 255, 0)')) %>%
+            
+            #Remove unnecessary buttons from the modebar.
+            
+            config(displayModeBar = TRUE,
+                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                                 'zoomOut2d', 'autoScale2d',
+                                                 'toggleSpikelines',
+                                                 'hoverCompareCartesian',
+                                                 'hoverClosestCartesian'),
+                   displaylogo = F, editable = F)
+          }
+        })
+        
+        
+        
+        #Table
+        output$Monthly_drugs_table <- renderDataTable({
+          datatable(
+            monthly_drugs_new(),
+            style = 'bootstrap',
+            rownames = FALSE,
+            colnames = c(
+              "Financial year",
+              "Financial month",
+              "Hospital  type",
+              "Diagnosis grouping",
+              "Drug type",
+              "Number"
+            )
+          ) 
+        })
+        
+        #Download button
+        
+        output$download_Monthly_Drugs <- downloadHandler(
+          filename = 'drugs_monthly_data.csv',
+          content = function(file) {
+            write.table(
+              monthly_drugs_new(),
+              file,
+              #Remove row numbers as the CSV file already has row numbers.
+              
+              row.names = FALSE,
+              col.names = c(
+                "Financial year",
+                "Financial Month",
+                "Hospital  type",
+                "Diagnosis grouping",
+                "Drug type",
+                "Number"
+              ),
+              sep = ","
+            )
+          }
+        )     
+        
+        #3) Monthly Age ####
+        
+        #Filter it by options for time trend
+        monthly_age_new <- reactive({
+          monthly %>%
+            filter(
+              year %in% input$Financial_Year3 
+              & hospital_type %in% input$Hospital_Type5
+              & diagnosis_type %in% input$Diagnosis_Type5
+              & drug_type == 'Any drug type'
+              & age_group == input$Ages2
+              & geography == 'Scotland'
+            ) %>%
+            select(year, financial_month,
+                   hospital_type, diagnosis_type, 
+                   age_group, 
+                   number)%>% 
+            droplevels(except= c(2,5))
+        })
+        
+        
+        # #Create the main body of the chart.
+        output$monthly_age_plot <- renderPlotly({
+          
+          #Now let's create alt message.
+          
+          if (is.null(input$Financial_Year3))
+            
+          { 
+            
+            #This is the message we are using.
+            
+            text_state_hosp <- list(
+              x = 5, 
+              y = 2,
+              font = list(color = "#0072B2", size = 20),
+              text = 
+                "Please make a selection from the drop down menus", 
+              xref = "x", 
+              yref = "y",  
+              showarrow = FALSE
+            ) 
+            
+            #Visualise an empty graph with the above message in the middle.
+            
+            plot_ly() %>% 
+              layout(annotations = text_state_hosp, 
+                     yaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE), 
+                     xaxis = list(showline = FALSE, 
+                                  showticklabels = FALSE, 
+                                  showgrid = FALSE)) %>%  
+              config(displayModeBar = FALSE,
+                     displaylogo = F, editable = F) 
+            
+          }
+          
+          else {
+          
+          #Add in a tooltip
+          tooltip_monthly_age <- paste0(
+            "Financial year: ",
+            monthly_age_new()$year,
+            "<br>",
+            "Month: ",
+            monthly_age_new()$financial_month,
+            "<br>",
+            "Number: ",
+            monthly_age_new()$number
+          )
+          
+          plot_ly(
+            data = monthly_age_new(),
+            #plot
+            x = ~  financial_month,
+            y = ~  number,
+            color = ~  year,
+            colors =             #We use 8 colours that are considered to be 
+              #blind friendly
+              c('#3F3685','#9B4393','#0078D4',
+                '#83BB26','#948DA3','#1E7F84',
+                '#6B5C85','#C73918'
+              )[1:length(input$Financial_Year3)],
+            #tooltip
+            text = tooltip_monthly_age,
+            hoverinfo = "text",
+            #type
+            type = 'scatter',
+            mode = 'lines+markers',
+            marker = list(size = 7),
+            width = 1000,
+            height = 500
+          ) %>%
+            
+            #Make the graph title reactive.
+            
+            layout(
+              title = list (text = (paste0("<b>",
+                                           "Number of hospital stays by month for selected financial years",
+                                           "<br>", "(Scotland; ",
+                                           input$Hospital_Type5, "; ",
+                                           word(input$Diagnosis_Type5, start = 1, sep = " \\("), "; ",
+                                           input$Ages2,
+                                           ")", "<b>")),
+                            font = list (size=15)),
+              separators = ".,",
+              annotations =
+                list(x = 0.98, y = -0.27,
+                     text = paste0("Source: Drug-Related","<br>",
+                                   "Hospital Statistics","<br>",
+                                   "(PHS, 2021)"),
+                     showarrow = F, xref='paper', yref='paper',
+                     xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                     font=list(family = "arial", size=12, color="#7f7f7f")),
+              
+              #We need to fix the range of the y axis, as R refuses to set...
+              #the lower end of this axis to zero.
+              #The following "range" command fixes the lower end to...
+              #zero, and calculates the upper end as the maximum...
+              #number visualised in the graph + 10% of this number.
+              #Also, wrap the y axis title in blank spaces so it doesn't...
+              #overlap with the y axis tick labels.
+              #Finally, make the y axis title reactive.
+              
+              yaxis = list(
+                
+                exponentformat = "none",
+                
+                separatethousands = TRUE,
+                
+                range = c(0, max(age_sex_time_new()$number, na.rm = TRUE) +
+                            (max(age_sex_time_new()$number, na.rm = TRUE)
+                             * 10 / 100)), fixedrange = TRUE,
+                
+                title = "Number",
+                showline = TRUE,
+                ticks = "outside"
+                
+              ),
+              
+              #Set the tick angle to minus 45. It's the only way for the x...
+              #axis tick labels (fin. years) to display without overlapping...
+              #with each other.
+              #Wrap the x axis title in blank spaces so that it doesn't...
+              #overlap with the x axis tick labels.
+              
+              xaxis = list(range = c(-1,12),fixedrange = TRUE,
+                           tickangle = 0,
+                           autotick = F,
+                           dtick = 2,
+                           title = paste0("Month",
+                                          "<br>",
+                                          "<br>"
+                           ),
+                           showline = TRUE,
+                           ticks = "outside"),
+              
+              #Fix the margins so that the graph and axis titles have enough...
+              #room to display nicely.
+              #Set the font sizes.
+              
+              margin = list(l = 90, r = 60, b = 70, t = 90),
+              font = list(size = 13),
+              
+              #Insert a legend so that the user knows which colour...
+              #corresponds to which location of treatment.
+              #Make the legend background and legend border white.
+              
+              showlegend = TRUE,
+              legend = list(bgcolor = 'rgba(255, 255, 255, 0)',
+                            bordercolor = 'rgba(255, 255, 255, 0)')) %>%
+            
+            #Remove unnecessary buttons from the modebar.
+            
+            config(displayModeBar = TRUE,
+                   modeBarButtonsToRemove = list('select2d', 'lasso2d', 'zoomIn2d',
+                                                 'zoomOut2d', 'autoScale2d',
+                                                 'toggleSpikelines',
+                                                 'hoverCompareCartesian',
+                                                 'hoverClosestCartesian'),
+                   displaylogo = F, editable = F)
+          }
+        })
+        
+        
+        
+        #Table
+        output$Monthly_age_table <- renderDataTable({
+          datatable(
+            monthly_age_new(),
+            style = 'bootstrap',
+            rownames = FALSE,
+            colnames = c(
+              "Financial year",
+              "Financial month",
+              "Hospital  type",
+              "Diagnosis grouping",
+              "Age group",
+              "Number"
+            )
+          ) 
+        })
+        
+        #Download button
+        
+        output$download_Monthly_age <- downloadHandler(
+          filename = 'age_monthly_data.csv',
+          content = function(file) {
+            write.table(
+              monthly_age_new(),
+              file,
+              #Remove row numbers as the CSV file already has row numbers.
+              
+              row.names = FALSE,
+              col.names = c(
+                "Financial year",
+                "Financial Month",
+                "Hospital  type",
+                "Diagnosis grouping",
+                "Age Group",
+                "Number"
+              ),
+              sep = ","
+            )
+          }
+        )     
 ##############################################.
 ############## Table tab ----
 ##############################################.
@@ -3392,6 +4453,16 @@ HTML('<div data-iframe-height></div>')
                           "Deprivation" = simd,
                           "Measure" = measure,
                           "Value" = value),
+                 "Monthly trends (Data explorer)" = monthly %>%
+                   rename("Financial year" = year, 
+                          "Month" = financial_month,
+                          "Hospital type" = hospital_type,
+                          "Diagnosis grouping" = diagnosis_type,
+                          "Location type" = geography_type, 
+                          "Location" = geography, 
+                          "Drug type" = drug_type,
+                          "Age group" = age_group,
+                          "Number" = number),
                  "Activity summary (Trend data)" = activity_summary %>% 
                  rename("Financial year" = year, 
                         "Hospital type" = hospital_type,
@@ -3429,9 +4500,9 @@ HTML('<div data-iframe-height></div>')
                           "Sex" = sex,
                           "Deprivation index" = simd,
                           "Number of stays" = total, 
-                          "<1 week (%)" = perc_less_1week,
-                          ">=1 week (%)" = perc_more_1week,
-                          "Median length of stay (days)" = med_los
+                          "Median length of stay (days)" = med_los,
+                          'Length of stay (days)' = length_of_stay,
+                          'Percentage' = percentage 
                    ),
                  "Emergency admissions" = emergency_admissions %>% 
                    rename("Financial year" = year, 
@@ -3446,8 +4517,6 @@ HTML('<div data-iframe-height></div>')
                           "Number of stays" = total,
                           "Emergency admissions (%)" = perc_adm_emer,
                           "Non-emergency admissions (%)" = perc_adm_other
-                          
-                     
                    ),
                  "Drug type by hospital" = drug_type_by_hospital %>% 
                    rename("Financial year" = year, 
@@ -3460,9 +4529,6 @@ HTML('<div data-iframe-height></div>')
                           "SMR01 and SMR04 (%)" = perc_sourceBOTH, 
                           "Number" = total
                    )
-                 
-                 
-                 
           )
         })
         
